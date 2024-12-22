@@ -4,3 +4,4 @@ matplotlib
 pandas
 ruff
 torch<=2.1.2
+pydantic
