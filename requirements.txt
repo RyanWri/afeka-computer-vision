@@ -1,5 +1,11 @@
 datasets
-numpy
-matplotlib
-pandas
 ruff
+numpy
+pandas
+matplotlib 
+scikit-learn
+torch
+torchvision
+h5py
+gdown
+pyclean
