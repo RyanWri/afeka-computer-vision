@@ -19,8 +19,3 @@ class BaselineCNN(nn.Module):
         x = self.flatten(x)  # Flatten
         x = torch.sigmoid(self.fc(x))  # Dense + Sigmoid
         return x
-
-
-# Instantiate the model
-model = BaselineCNN()
-print(model)
