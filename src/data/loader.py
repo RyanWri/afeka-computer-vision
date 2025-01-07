@@ -23,9 +23,16 @@ def save_dataset_to_dataframe(output_path, sample_size, dataset_dir) -> bool:
     """
     Save the original 96x96 images to a Parquet file for the pipeline.
     """
+    # Check if the dataset is already downloaded
+    if os.path.exists(dataset_dir) and len(os.listdir(dataset_dir)) > 0:
+        print(f"Dataset already exists in {dataset_dir}. Skipping download.")
+        return False
+
+    # Download the dataset
+    print(f"Downloading dataset to {dataset_dir}...")
     transform = transforms.Compose([transforms.ToTensor()])
     dataset = datasets.PCAM(
-        root=dataset_dir, split="val", transform=transform, download=True
+        root=dataset_dir, split="train", transform=transform, download=True
     )
 
     # Limit dataset to a small sample size
@@ -50,6 +57,7 @@ def save_dataset_to_dataframe(output_path, sample_size, dataset_dir) -> bool:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_parquet(output_path, engine="pyarrow")
     print(f"Saved dataset to {output_path}")
+    return True
 
 
 def load_dataset_from_dataframe(file_path):
@@ -57,20 +65,20 @@ def load_dataset_from_dataframe(file_path):
 
     def bytes_to_tensor(image_bytes):
         buffer = BytesIO(image_bytes)
-        return torch.load(buffer, weights_only=True)
+        return torch.load(buffer)
 
     df["image_tensor"] = df["image_tensor"].apply(bytes_to_tensor)
     return df
 
 
 if __name__ == "__main__":
-    dir = "/home/ran/datasets/test-pcam"
+    dir = "/home/ran/datasets/test-pcam/"
     parquet_path = f"{dir}/test.parquet"
     dataset_dir = f"{dir}/pcam_data"
     loaded = save_dataset_to_dataframe(
-        output_path=parquet_path, sample_size=10, dataset_dir=dataset_dir
+        output_path=parquet_path, sample_size=2000, dataset_dir=dataset_dir
     )
     if loaded:
-        print("downloaded dataset")
+        print("Dataset downloaded and saved.")
     else:
-        print("dataset already exists")
+        print("Dataset already exists.")
