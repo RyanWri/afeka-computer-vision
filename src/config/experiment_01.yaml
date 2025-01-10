@@ -1,9 +1,11 @@
 experiment:
   name: "baseline_with_rejection"
   alias: "experiment_01"  # Unique alias for the experiment
+  base_root: "/home/ran/afeka/computer-vision"  # Base directory for all experiment outputs
   input_folder: "/home/ran/datasets/test-pcam"  # Path to input files or dataset folder
-  results_path: "./results/experiment_results.parquet"  # Path to save output results
   sample_size: 1000  # Number of samples to use for the experiment
+  rejection_gate_threshold: 0.5
+  
 
 rejection_models:
   - name: "random_rejector"
@@ -17,9 +19,3 @@ rejection_models:
 baseline_model:
   name: "baseline_cnn"
   path: "./models/baseline_cnn.pth"  # Trained model weights
-
-consts:
-  - name: "rejection_gate_threshold"
-    value: 0.5  # Confidence threshold for rejection
-  - name: "metrics_path"
-    value: "./results/metrics.json"  # Path to save evaluation metrics

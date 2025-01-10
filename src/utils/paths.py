@@ -16,3 +16,33 @@ def get_config_path(relative_path):
         src_dir, "../config"
     )  # Relative path to the config directory
     return os.path.normpath(os.path.join(config_dir, relative_path))
+
+
+def resolve_experiment_paths(config):
+    """
+    Dynamically resolve all paths for results and metrics based on the base root and experiment alias.
+
+    Args:
+        config (dict): Experiment configuration.
+
+    Returns:
+        dict: Updated configuration with resolved paths for results and metrics.
+    """
+    base_root = config["experiment"]["base_root"]
+    alias = config["experiment"]["alias"]
+
+    # Create experiment-specific directory under base_root
+    experiment_root = os.path.join(base_root, alias)
+    os.makedirs(experiment_root, exist_ok=True)
+
+    # Update paths for outputs
+    resolved_paths = {
+        "results_path": os.path.join(experiment_root, "results.parquet"),
+        "metrics_path": os.path.join(experiment_root, "metrics.json"),
+    }
+
+    # Inject resolved paths into the configuration
+    config["experiment"]["results_path"] = resolved_paths["results_path"]
+    config["experiment"]["metrics_path"] = resolved_paths["metrics_path"]
+
+    return config

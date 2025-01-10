@@ -1,7 +1,7 @@
 import pandas as pd
 import torch
 from tqdm import tqdm
-from utils.paths import get_config_path
+from utils.paths import get_config_path, resolve_experiment_paths
 from utils.io import (
     load_config,
     load_dataset,
@@ -17,6 +17,7 @@ def run_experiment(config_filename):
     # Load configuration
     config_path = get_config_path(config_filename)
     config = load_config(config_path)
+    config = resolve_experiment_paths(config)
 
     # Load dataset
     df = load_dataset(config)

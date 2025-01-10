@@ -52,11 +52,10 @@ def load_dataset(config):
     return df.sample(n=sample_size)  # Limit to sample size
 
 
-def initialize_rejection_gate(config):
+def initialize_rejection_gate(rejection_models_config, rejection_gate_threshold):
     """
     Initialize the rejection gate with models and thresholds from the configuration.
     """
-    rejection_models_config = config["rejection_models"]
     rejection_models = []
     for model_config in rejection_models_config:
         rejection_models.append(load_rejection_model(model_config))
@@ -65,7 +64,6 @@ def initialize_rejection_gate(config):
         model_config["weight"] for model_config in rejection_models_config
     ]
 
-    rejection_gate_threshold = config["consts"]["rejection_gate_threshold"]
     return RejectionGate(
         rejection_models=rejection_models,
         weights=rejection_weights,
