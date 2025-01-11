@@ -23,7 +23,9 @@ def run_experiment(config_filename):
     df = load_dataset(config)
 
     # Initialize rejection gate
-    rejection_gate = initialize_rejection_gate(config)
+    rejection_gate = initialize_rejection_gate(
+        config["rejection_models"], config["experiment"]["rejection_gate_threshold"]
+    )
 
     # Load the baseline classification model
     cnn_model = load_baseline_model(config["baseline_model"])

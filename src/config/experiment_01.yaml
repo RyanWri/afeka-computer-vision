@@ -6,7 +6,6 @@ experiment:
   sample_size: 1000  # Number of samples to use for the experiment
   rejection_gate_threshold: 0.5
   
-
 rejection_models:
   - name: "random_rejector"
     path: "./models/random_rejector.py"

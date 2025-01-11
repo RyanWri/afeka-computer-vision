@@ -65,7 +65,7 @@ def load_dataset_from_dataframe(file_path):
 
     def bytes_to_tensor(image_bytes):
         buffer = BytesIO(image_bytes)
-        return torch.load(buffer)
+        return torch.load(buffer, weights_only=True)
 
     df["image_tensor"] = df["image_tensor"].apply(bytes_to_tensor)
     return df
