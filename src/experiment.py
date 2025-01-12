@@ -1,10 +1,11 @@
 import pandas as pd
 import torch
 from tqdm import tqdm
-from utils.paths import get_config_path, resolve_experiment_paths
-from utils.io import (
+from io_utils import (
+    get_config_path,
+    resolve_experiment_paths,
     load_config,
-    load_dataset,
+    load_dataset_from_config,
     load_baseline_model,
     initialize_rejection_gate,
 )
@@ -20,7 +21,7 @@ def run_experiment(config_filename):
     config = resolve_experiment_paths(config)
 
     # Load dataset
-    df = load_dataset(config)
+    df = load_dataset_from_config(config, split="train")
 
     # Initialize rejection gate
     rejection_gate = initialize_rejection_gate(
@@ -36,7 +37,7 @@ def run_experiment(config_filename):
     cnn_model.to(device)
 
     with torch.no_grad():
-        for _, row in tqdm(df.iterrows(), total=len(df)):
+        for _, row in tqdm(df.iterrows(), total=100):
             image_id = row["image_id"]
             image_tensor = row["image_tensor"]
             label = row["label"]

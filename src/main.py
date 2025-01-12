@@ -1,6 +1,6 @@
 import pandas as pd
 import torch
-from data.loaders import load_dataset
+from loaders import load_dataset
 from models.baseline_cnn import BaselineCNN
 from models.rejection_gate import RandomRejector
 

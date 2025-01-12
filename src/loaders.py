@@ -79,6 +79,8 @@ def ensure_split_exists(dataset_dir, split):
 
 
 def load_dataset(dataset_dir, split):
+    split = "valid" if split == "val" else split
+
     if split == "train":
         # dataset link: https://github.com/basveeling/pcam
         message = """Please ensure train split is downloaded. 
