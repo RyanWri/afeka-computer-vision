@@ -1,8 +1,8 @@
 import pandas as pd
 import torch
+from loaders import load_dataset
 from models.baseline_cnn import BaselineCNN
 from models.rejection_gate import RandomRejector
-from data.loader import load_dataset_from_dataframe
 
 
 def process_pipeline(df, rejection_rate=0.1):
@@ -58,13 +58,6 @@ def process_pipeline(df, rejection_rate=0.1):
     return pd.DataFrame(results)
 
 
-def load_data(parquet_file):
-    """
-    Load data from a Parquet file into a DataFrame.
-    """
-    return load_dataset_from_dataframe(parquet_file)
-
-
 def save_data(df, output_file):
     """
     Save a DataFrame to a Parquet file.
@@ -74,16 +67,15 @@ def save_data(df, output_file):
 
 
 if __name__ == "__main__":
+    dataset_dir = "/home/ran/datasets/pcam"  # Path where PCam dataset is stored
+    train_dataset = load_dataset(dataset_dir, "train")
+
+    # Example: Iterate over the dataset
+    for images, labels in train_dataset:
+        print(f"Image batch shape: {images.shape}, Label: {labels}")
+        break
+
     # Parameters
     input_parquet = "/home/ran/datasets/test-pcam/test.parquet"
     output_parquet = "/home/ran/datasets/test-pcam/results.parquet"
     rejection_rate = 0.1
-
-    # Load data
-    df = load_data(input_parquet)
-
-    # Process pipeline
-    results_df = process_pipeline(df, rejection_rate=rejection_rate)
-
-    # Save results
-    save_data(results_df, output_parquet)

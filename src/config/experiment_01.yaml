@@ -2,10 +2,12 @@ experiment:
   name: "baseline_with_rejection"
   alias: "experiment_01"  # Unique alias for the experiment
   base_root: "/home/ran/afeka/computer-vision"  # Base directory for all experiment outputs
-  input_folder: "/home/ran/datasets/test-pcam"  # Path to input files or dataset folder
-  sample_size: 1000  # Number of samples to use for the experiment
+  batch_size: 1
   rejection_gate_threshold: 0.5
-  
+
+input:
+  folder: "/home/ran/datasets/pcam"
+
 rejection_models:
   - name: "random_rejector"
     path: "./models/random_rejector.py"
