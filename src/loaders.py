@@ -58,10 +58,10 @@ def ensure_split_exists(dataset_dir, split):
         dataset_dir (str): Path where the dataset splits are stored.
         split (str): Split to check ('train', 'val', or 'test').
     """
-    split = "valid" if split == "val" else split
+    split_name = "valid" if split == "val" else split
     required_files = [
-        f"camelyonpatch_level_2_split_{split}_x.h5.gz",
-        f"camelyonpatch_level_2_split_{split}_y.h5.gz",
+        f"camelyonpatch_level_2_split_{split_name}_x.h5.gz",
+        f"camelyonpatch_level_2_split_{split_name}_y.h5.gz",
     ]
 
     # Check if required files exist
@@ -79,8 +79,6 @@ def ensure_split_exists(dataset_dir, split):
 
 
 def load_dataset(dataset_dir, split):
-    split = "valid" if split == "val" else split
-
     if split == "train":
         # dataset link: https://github.com/basveeling/pcam
         message = """Please ensure train split is downloaded. 
@@ -91,6 +89,8 @@ def load_dataset(dataset_dir, split):
     if split in ["val", "test"]:
         ensure_split_exists(dataset_dir, split)
 
+    # fix val name edge case
+    split = "valid" if split == "val" else split
     normalize_transform = transforms.Normalize(mean=[0.5], std=[0.5])
     dataset = PCamHDF5Dataset(
         h5_file_x_path=os.path.join(

@@ -1,5 +1,11 @@
 import h5py
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+)
 
 
 def calculate_metrics(results_path):
@@ -13,10 +19,14 @@ def calculate_metrics(results_path):
     with h5py.File(results_path, "r") as f:
         labels = f["label"][:]
         if f.get("rejection") is None:
-            rejection_flags = [0] * len(labels)  # All samples are non-rejected in this casef
+            rejection_flags = [0] * len(
+                labels
+            )  # All samples are non-rejected in this casef
         else:
             rejection_flags = f["rejection"][:]
-        predictions = f["prediction"][:]  # Assumes predictions exist for non-rejected samples
+        predictions = f["prediction"][
+            :
+        ]  # Assumes predictions exist for non-rejected samples
 
     # Calculate rejection rate
     rejection_rate = rejection_flags.mean()

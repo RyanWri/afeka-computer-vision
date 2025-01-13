@@ -21,8 +21,12 @@ def run_experiment(config_filename):
     config = load_config(config_path)
     config = resolve_experiment_paths(config)
 
-    # Load dataset
+    # Load dataset in splits
     train_dataset = load_dataset_from_config(config, split="train")
+    test_dataset = load_dataset_from_config(config, split="test")
+    val_dataset = load_dataset_from_config(config, split="val")
+
+    # create loader for the train
     train_loader = DataLoader(
         train_dataset, batch_size=config["experiment"]["batch_size"], shuffle=False
     )
@@ -81,5 +85,5 @@ def run_experiment(config_filename):
 
 if __name__ == "__main__":
     # Specify the configuration file path
-    config_filename = "experiment_01.yaml"  # Relative to the 'config' directory
+    config_filename = "experiment_projlab.yaml"  # Relative to the 'config' directory
     run_experiment(config_filename)
