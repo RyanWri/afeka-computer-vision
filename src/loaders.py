@@ -19,7 +19,6 @@ class PCamHDF5Dataset(Dataset):
         """
         self.h5_file_x = h5py.File(h5_file_x_path, "r")
         self.h5_file_y = h5py.File(h5_file_y_path, "r")
-
         self.images = self.h5_file_x["x"]  # Update key if using another split
         self.labels = self.h5_file_y["y"]  # Update key if using another split
 
@@ -31,16 +30,18 @@ class PCamHDF5Dataset(Dataset):
     def __getitem__(self, idx):
         # Load image and label
         image = self.images[idx]  # NumPy array
-        label = self.labels[idx]  # Binary label (0 or 1)
 
         # Convert image to PyTorch tensor and normalize to [0, 1]
         image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
+        label = torch.tensor(
+            self.labels[idx], dtype=torch.float32
+        ).squeeze()  # Remove extra dimensions
 
         # Apply transformations if provided
         if self.transform:
             image = self.transform(image)
 
-        return image, torch.tensor(label, dtype=torch.float32)
+        return image, label
 
     def close(self):
         """
@@ -58,10 +59,10 @@ def ensure_split_exists(dataset_dir, split):
         dataset_dir (str): Path where the dataset splits are stored.
         split (str): Split to check ('train', 'val', or 'test').
     """
-    split = "valid" if split == "val" else split
+    split_name = "valid" if split == "val" else split
     required_files = [
-        f"camelyonpatch_level_2_split_{split}_x.h5.gz",
-        f"camelyonpatch_level_2_split_{split}_y.h5.gz",
+        f"camelyonpatch_level_2_split_{split_name}_x.h5.gz",
+        f"camelyonpatch_level_2_split_{split_name}_y.h5.gz",
     ]
 
     # Check if required files exist
@@ -79,8 +80,6 @@ def ensure_split_exists(dataset_dir, split):
 
 
 def load_dataset(dataset_dir, split):
-    split = "valid" if split == "val" else split
-
     if split == "train":
         # dataset link: https://github.com/basveeling/pcam
         message = """Please ensure train split is downloaded. 
@@ -91,6 +90,8 @@ def load_dataset(dataset_dir, split):
     if split in ["val", "test"]:
         ensure_split_exists(dataset_dir, split)
 
+    # fix val name edge case
+    split = "valid" if split == "val" else split
     normalize_transform = transforms.Normalize(mean=[0.5], std=[0.5])
     dataset = PCamHDF5Dataset(
         h5_file_x_path=os.path.join(

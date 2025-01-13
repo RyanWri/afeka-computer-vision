@@ -1,11 +1,16 @@
-datasets
-ruff
-numpy
-pandas
-matplotlib 
-scikit-learn
-torch
-torchvision
-h5py
-gdown
-pyclean
+# Core dependencies
+numpy>=1.19.2,<2.0.0          # Compatible with PyTorch 1.12.1
+pandas>=1.1.0,<2.0.0          # Compatible with NumPy and stable releases
+matplotlib>=3.3.0,<4.0.0      # Compatible with stable Python versions
+scikit-learn>=0.24.0,<2.0.0   # Ensures compatibility with other numerical libraries
+
+# PyTorch dependencies
+torch==1.12.1         # PyTorch with CUDA 11.4 support
+torchvision==0.13.1     # Compatible torchvision for CUDA 11.4
+
+# Dataset handling and utilities
+datasets>=1.17.0              # A common version for handling datasets
+h5py>=3.1.0,<4.0.0            # Stable and widely used version
+gdown>=4.4.0                  # For downloading datasets or files from Google Drive
+pyclean>=1.1.0                # Utility for cleaning Python bytecode files
+ruff>=0.0.288                 # Python linter, use the latest stable release

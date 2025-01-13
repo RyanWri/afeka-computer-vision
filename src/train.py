@@ -1,54 +1,142 @@
 import torch
-from sklearn.metrics import accuracy_score
+import torch.nn as nn
+import torch.optim as optim
+from tqdm import tqdm
+from models.baseline_cnn import BaselineCNN
+from io_utils import load_dataset_from_config
+from torch.utils.data import DataLoader
 
 
-def train_model(model, train_loader, criterion, optimizer, device):
-    model.train()
-    total_loss = 0
-    all_preds, all_labels = [], []
+def train_model(model, train_loader, test_loader, device, config):
+    """
+    Train the baseline CNN model.
 
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
+    Args:
+        model (torch.nn.Module): The CNN model to train.
+        train_loader (DataLoader): DataLoader for the training dataset.
+        test_loader (DataLoader): DataLoader for the test dataset.
+        device (torch.device): Device to use for training (CPU or GPU).
+        config (dict): Configuration dictionary with hyperparameters and paths.
 
-        # Forward pass
-        outputs = model(images).squeeze()
-        loss = criterion(outputs, labels)
-        total_loss += loss.item()
+    Returns:
+        torch.nn.Module: Trained model.
+    """
+    # Define loss function and optimizer
+    criterion = nn.BCELoss()  # Binary Cross-Entropy Loss
+    optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
-        # Backward pass and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+    num_epochs = config["num_epochs"]
+    model.to(device)
 
-        # Collect predictions and labels
-        preds = (outputs > 0.5).float()
-        all_preds.extend(preds.cpu().numpy())
-        all_labels.extend(labels.cpu().numpy())
+    for epoch in range(num_epochs):
+        print(f"Epoch {epoch + 1}/{num_epochs}")
 
-    avg_loss = total_loss / len(train_loader)
-    accuracy = accuracy_score(all_labels, all_preds)
-    return avg_loss, accuracy
+        # Training Phase
+        model.train()
+        train_loss = 0.0
+        for images, labels in tqdm(train_loader, desc="Training"):
+            images, labels = images.to(device), labels.float().to(device).unsqueeze(1)
+
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss.item()
+
+        train_loss /= len(train_loader)
+        print(f"Train Loss: {train_loss:.4f}")
+
+    print("Training complete!")
+
+    # Test the model
+    test_loss, test_accuracy = evaluate_model(model, test_loader, device, criterion)
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
+
+    # Save the trained model
+    torch.save(model.state_dict(), config["save_path"])
+    print(f"Model saved to {config['save_path']}")
+    return model
 
 
-def evaluate_model(model, loader, criterion, device):
+def evaluate_model(model, data_loader, device, criterion):
+    """
+    Evaluate the model on the given dataset.
+
+    Args:
+        model (torch.nn.Module): The model to evaluate.
+        data_loader (DataLoader): DataLoader for the dataset to evaluate.
+        device (torch.device): Device to use for evaluation.
+        criterion (nn.Module): Loss function.
+
+    Returns:
+        tuple: Average loss and accuracy.
+    """
     model.eval()
-    total_loss = 0
-    all_preds, all_labels = [], []
+    total_loss = 0.0
+    correct_predictions = 0
+    total_samples = 0
 
     with torch.no_grad():
-        for images, labels in loader:
-            images, labels = images.to(device), labels.to(device)
+        for images, labels in tqdm(data_loader, desc="Testing"):
+            images, labels = images.to(device), labels.float().to(device).unsqueeze(1)
 
-            # Forward pass
-            outputs = model(images).squeeze()
+            outputs = model(images)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
 
-            # Collect predictions and labels
-            preds = (outputs > 0.5).float()
-            all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            # Compute accuracy
+            predictions = (outputs >= 0.5).float()  # Binary predictions
+            correct_predictions += (predictions == labels).sum().item()
+            total_samples += labels.size(0)
 
-    avg_loss = total_loss / len(loader)
-    accuracy = accuracy_score(all_labels, all_preds)
-    return avg_loss, accuracy
+    average_loss = total_loss / len(data_loader)
+    accuracy = (correct_predictions / total_samples) * 100
+    return average_loss, accuracy
+
+
+def train_baseline_convolution_model():
+    # Configuration based on paper
+    config = {
+        "batch_size": 256,
+        "learning_rate": 0.001,  # From the paper
+        "num_epochs": 50,  # From the paper
+        "save_path": "/home/linuxu/afeka/computer-vision/baseline_cnn_trained.pth",
+        "input": {"folder": "/home/linuxu/datasets/pcam"},
+    }
+
+    train_dataset = load_dataset_from_config(config, split="train")
+    test_dataset = load_dataset_from_config(config, split="test")
+
+    # create loader for the train
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=4,  # Experiment with this value
+        pin_memory=True,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=4,  # Experiment with this value
+        pin_memory=True,
+    )
+
+    # Initialize the model
+    model = BaselineCNN()
+
+    # Detect device (GPU or CPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # Train the model
+    trained_model = train_model(model, train_loader, test_loader, device, config)
+
+    return trained_model
+
+
+if __name__ == "__main__":
+    cnn_model = train_baseline_convolution_model()
