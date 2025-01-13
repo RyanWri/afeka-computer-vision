@@ -1,6 +1,5 @@
 import os
 import yaml
-import torch
 from loaders import load_dataset
 from models.rejection_gate import RejectionGate, RandomRejector
 from models.baseline_cnn import BaselineCNN
@@ -36,7 +35,7 @@ def load_baseline_model(model_config):
     Load the baseline classification model.
     """
     cnn_model = BaselineCNN()
-    cnn_model.load_state_dict(torch.load(model_config["path"]))
+    # cnn_model.load_state_dict(torch.load(model_config["path"]))
     cnn_model.eval()
     return cnn_model
 

@@ -1,5 +1,6 @@
 import pandas as pd
 import torch
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 from io_utils import (
     get_config_path,
@@ -21,7 +22,12 @@ def run_experiment(config_filename):
     config = resolve_experiment_paths(config)
 
     # Load dataset
-    df = load_dataset_from_config(config, split="train")
+    train_dataset = load_dataset_from_config(config, split="train")
+    train_loader = DataLoader(
+        train_dataset, batch_size=config["experiment"]["batch_size"], shuffle=False
+    )
+    for x in train_loader:
+        print(x)
 
     # Initialize rejection gate
     rejection_gate = initialize_rejection_gate(
@@ -35,35 +41,36 @@ def run_experiment(config_filename):
     results = []
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cnn_model.to(device)
-
     with torch.no_grad():
-        for _, row in tqdm(df.iterrows(), total=100):
-            image_id = row["image_id"]
-            image_tensor = row["image_tensor"]
-            label = row["label"]
+        for batch in tqdm(train_loader, total=len(train_loader)):
+            images, labels = batch  # Unpack batch
+            images, labels = images.to(device), labels.to(device)
 
-            # Apply rejection gate
-            if rejection_gate.should_reject(image_tensor):
-                results.append(
-                    {
-                        "image_id": image_id,
-                        "reject": True,
-                        "model": None,
-                        "label": label,
-                    }
-                )
-            else:
-                # If not rejected, classify using the CNN model
-                image_tensor = image_tensor.to(device).unsqueeze(0)
-                prediction = cnn_model(image_tensor).item()
-                results.append(
-                    {
-                        "image_id": image_id,
-                        "reject": False,
-                        "model": prediction,
-                        "label": label,
-                    }
-                )
+            for i in range(len(images)):
+                image_tensor = images[i]
+                label = labels[i].item()
+
+                # Apply rejection gate
+                if rejection_gate.should_reject(image_tensor):
+                    results.append(
+                        {
+                            "image_id": f"img_{i}",  # Use a placeholder or unique ID if available
+                            "reject": True,
+                            "model": None,
+                            "label": label,
+                        }
+                    )
+                else:
+                    # If not rejected, classify using the CNN model
+                    prediction = cnn_model(image_tensor.unsqueeze(0)).item()
+                    results.append(
+                        {
+                            "image_id": f"img_{i}",  # Use a placeholder or unique ID if available
+                            "reject": False,
+                            "model": prediction,
+                            "label": label,
+                        }
+                    )
 
     # Save results
     results_path = config["experiment"]["results_path"]
