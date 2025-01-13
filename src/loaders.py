@@ -19,7 +19,6 @@ class PCamHDF5Dataset(Dataset):
         """
         self.h5_file_x = h5py.File(h5_file_x_path, "r")
         self.h5_file_y = h5py.File(h5_file_y_path, "r")
-
         self.images = self.h5_file_x["x"]  # Update key if using another split
         self.labels = self.h5_file_y["y"]  # Update key if using another split
 
@@ -31,16 +30,18 @@ class PCamHDF5Dataset(Dataset):
     def __getitem__(self, idx):
         # Load image and label
         image = self.images[idx]  # NumPy array
-        label = self.labels[idx]  # Binary label (0 or 1)
 
         # Convert image to PyTorch tensor and normalize to [0, 1]
         image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
+        label = torch.tensor(
+            self.labels[idx], dtype=torch.float32
+        ).squeeze()  # Remove extra dimensions
 
         # Apply transformations if provided
         if self.transform:
             image = self.transform(image)
 
-        return image, torch.tensor(label, dtype=torch.float32)
+        return image, label
 
     def close(self):
         """

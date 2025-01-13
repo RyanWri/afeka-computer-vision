@@ -30,8 +30,6 @@ def run_experiment(config_filename):
     train_loader = DataLoader(
         train_dataset, batch_size=config["experiment"]["batch_size"], shuffle=False
     )
-    for x in train_loader:
-        print(x)
 
     # Initialize rejection gate
     rejection_gate = initialize_rejection_gate(
