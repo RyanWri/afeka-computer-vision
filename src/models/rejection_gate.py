@@ -54,7 +54,7 @@ class RejectionGate:
             bool: True if rejected, False otherwise.
         """
         confidence = self.compute_rejection_confidence(input_data)
-        return confidence >= self.threshold
+        return confidence > self.threshold
 
 
 class RandomRejector:

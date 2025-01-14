@@ -1,9 +1,9 @@
 experiment:
-  name: "baseline_with_rejection"
-  alias: "experiment_01"  # Unique alias for the experiment
+  name: "baseline_no_rejection"
+  alias: "experiment_baseline_no_rejection"  # Unique alias for the experiment
   base_root: "/home/ran/afeka/computer-vision"  # Base directory for all experiment outputs
   batch_size: 1
-  rejection_gate_threshold: 0.5
+  rejection_gate_threshold: 1.0
 
 input:
   folder: "/home/ran/datasets/pcam"

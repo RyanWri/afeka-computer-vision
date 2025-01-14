@@ -111,13 +111,13 @@ def evaluate_model(model, data_loader, device, criterion):
     return average_loss, accuracy
 
 
-def train_baseline_convolution_model():
+def train_baseline_convolution_model(save_path):
     # Configuration based on paper
     config = {
         "batch_size": 256,
         "learning_rate": 0.001,  # From the paper
         "num_epochs": 50,  # From the paper
-        "save_path": "/home/linuxu/afeka/computer-vision/baseline_cnn_trained.pth",
+        "save_path": save_path,
         "input": {"folder": "/home/linuxu/datasets/pcam"},
     }
 
