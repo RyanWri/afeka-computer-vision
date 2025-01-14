@@ -21,14 +21,16 @@ def run_experiment(config_filename):
     config = load_config(config_path)
     config = resolve_experiment_paths(config)
 
-    # Load dataset in splits
-    train_dataset = load_dataset_from_config(config, split="train")
+    # Load test dataset only
     test_dataset = load_dataset_from_config(config, split="test")
-    val_dataset = load_dataset_from_config(config, split="val")
 
-    # create loader for the train
-    train_loader = DataLoader(
-        train_dataset, batch_size=config["experiment"]["batch_size"], shuffle=False
+    # Create DataLoader with shuffle and pin memory
+    data_loader = DataLoader(
+        test_dataset,
+        batch_size=1,  # Batch size of 1 to process individual images
+        shuffle=True,  # Enable shuffling
+        pin_memory=True,  # Use pinned memory for faster GPU transfers
+        num_workers=4,
     )
 
     # Initialize rejection gate
@@ -36,45 +38,48 @@ def run_experiment(config_filename):
         config["rejection_models"], config["experiment"]["rejection_gate_threshold"]
     )
 
-    # Load the baseline classification model
+    # Load the baseline convolution model
     cnn_model = load_baseline_model(config["baseline_model"])
-
-    # Run inference pipeline
-    results = []
+    cnn_model.eval()  # Set the model to evaluation mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cnn_model.to(device)
-    with torch.no_grad():
-        for batch in tqdm(train_loader, total=len(train_loader)):
-            images, labels = batch  # Unpack batch
-            images, labels = images.to(device), labels.to(device)
 
-            for i in range(len(images)):
-                image_tensor = images[i]
-                label = labels[i].item()
+    # Prepare results storage
+    results = []
 
-                # Apply rejection gate
-                if rejection_gate.should_reject(image_tensor):
-                    results.append(
-                        {
-                            "image_id": f"img_{i}",  # Use a placeholder or unique ID if available
-                            "reject": True,
-                            "model": None,
-                            "label": label,
-                        }
-                    )
-                else:
-                    # If not rejected, classify using the CNN model
-                    prediction = cnn_model(image_tensor.unsqueeze(0)).item()
-                    results.append(
-                        {
-                            "image_id": f"img_{i}",  # Use a placeholder or unique ID if available
-                            "reject": False,
-                            "model": prediction,
-                            "label": label,
-                        }
-                    )
+    # Process each image in the test dataset
+    for idx, (image, label) in tqdm(
+        enumerate(data_loader), total=len(data_loader), desc="Processing Images"
+    ):
+        image = image.to(device)
+        label = label.item()  # Convert label tensor to scalar
 
-    # Save results
+        # Apply rejection gate
+        is_rejected = rejection_gate.should_reject(image)
+
+        if not is_rejected:
+            # If not rejected, classify using the CNN model
+            with torch.no_grad():
+                logits = cnn_model(image)  # Get logits
+                probability = torch.sigmoid(logits).item()  # Apply sigmoid
+                predicted_label = 1 if probability >= 0.5 else 0  # Threshold at 0.5
+        else:
+            # For rejected samples, no prediction
+            probability = None
+            predicted_label = None
+
+        # Store results
+        results.append(
+            {
+                "img_id": f"img_{idx}",  # Unique ID for each image
+                "reject": is_rejected,
+                "label": label,  # Ground truth label
+                "probability": probability,  # Probability if not rejected
+                "predicted_label": predicted_label,  # Predicted label if not rejected
+            }
+        )
+
+    # Save results to Parquet
     results_path = config["experiment"]["results_path"]
     results_df = pd.DataFrame(results)
     results_df.to_parquet(results_path, engine="pyarrow")

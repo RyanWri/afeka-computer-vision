@@ -1,78 +1,80 @@
-import h5py
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
-)
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score
 
 
-def calculate_metrics(results_path):
+def compute_rejection_metrics(results_df):
     """
-    Calculate evaluation metrics from the results dataset.
+    Compute metrics for the rejection mechanism.
+
     Args:
-        results_path (str): Path to the HDF5 file containing the results.
+        results_df (pd.DataFrame): DataFrame containing experiment results.
+
     Returns:
-        dict: Dictionary containing rejection rate and classification metrics.
+        dict: Flattened metrics for the rejection mechanism.
     """
-    with h5py.File(results_path, "r") as f:
-        labels = f["label"][:]
-        if f.get("rejection") is None:
-            rejection_flags = [0] * len(
-                labels
-            )  # All samples are non-rejected in this casef
-        else:
-            rejection_flags = f["rejection"][:]
-        predictions = f["prediction"][
-            :
-        ]  # Assumes predictions exist for non-rejected samples
+    # True labels for rejection (1 if rejected, 0 if not)
+    true_rejection_labels = results_df["reject"].astype(int)
 
-    # Calculate rejection rate
-    rejection_rate = rejection_flags.mean()
+    # Placeholder for rejection confidences (use actual scores if available)
+    rejection_confidences = results_df["reject"].astype(float)
 
-    # Non-rejected indices
-    non_rejected_indices = ~rejection_flags
-    covered_labels = labels[non_rejected_indices]
-    covered_predictions = predictions[non_rejected_indices]
-
-    # Classification metrics for non-rejected samples
-    accuracy = accuracy_score(covered_labels, covered_predictions > 0.5)
-    precision = precision_score(covered_labels, covered_predictions > 0.5)
-    recall = recall_score(covered_labels, covered_predictions > 0.5)
-    f1 = f1_score(covered_labels, covered_predictions > 0.5)
-    auc = roc_auc_score(covered_labels, covered_predictions)
+    # Rejection metrics
+    rejection_rate = true_rejection_labels.mean()  # Proportion of rejected samples
+    auc_rejection = roc_auc_score(true_rejection_labels, rejection_confidences)
 
     return {
         "rejection_rate": rejection_rate,
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1,
-        "auc": auc,
+        "rejection_auc": auc_rejection,
     }
 
 
-def compare_metrics(metrics1, metrics2, name1, name2):
+def compute_non_rejected_metrics(results_df):
     """
-    Compare evaluation metrics between two results datasets.
+    Compute classification metrics for non-rejected samples.
+
     Args:
-        metrics1 (dict): Metrics from the first dataset.
-        metrics2 (dict): Metrics from the second dataset.
-        name1 (str): Name of the first dataset.
-        name2 (str): Name of the second dataset.
+        results_df (pd.DataFrame): DataFrame containing experiment results.
+
+    Returns:
+        dict: Flattened metrics for classification of non-rejected samples.
     """
-    print(f"\nComparison between {name1} and {name2}:")
-    for key in metrics1.keys():
-        print(f"{key.capitalize()}:")
-        print(f"  {name1}: {metrics1[key]:.4f}")
-        print(f"  {name2}: {metrics2[key]:.4f}")
-        print()
+    # Filter non-rejected samples
+    non_rejected = results_df[results_df["reject"] == False]
+
+    # Extract labels and predictions
+    true_labels = non_rejected["label"].values
+    probabilities = (
+        non_rejected["probability"].dropna().values
+    )  # Predicted probabilities
+    predictions = non_rejected["predicted_label"].dropna().values  # Binary predictions
+
+    # Classification metrics
+    accuracy = (predictions == true_labels).mean()
+    precision = precision_score(true_labels, predictions)
+    recall = recall_score(true_labels, predictions)
+    f1 = f1_score(true_labels, predictions)
+    auc_classification = roc_auc_score(true_labels, probabilities)
+
+    return {
+        "classification_accuracy": accuracy,
+        "classification_precision": precision,
+        "classification_recall": recall,
+        "classification_f1_score": f1,
+        "classification_auc": auc_classification,
+    }
 
 
-def calculate_rejection_rate(hdf5_path):
-    with h5py.File(hdf5_path, "r") as f:
-        if f.get("rejection") is None:
-            return 0.0  # No rejection in the dataset
-        rejection = f["rejection"][:]
-    return rejection.mean()
+def summarize_metrics(results_df):
+    """
+    Compute and summarize metrics for rejection and classification.
+
+    Args:
+        results_df (pd.DataFrame): DataFrame containing experiment results.
+
+    Returns:
+        dict: Flattened dictionary containing all metrics.
+    """
+    rejection_metrics = compute_rejection_metrics(results_df)
+    classification_metrics = compute_non_rejected_metrics(results_df)
+
+    # Combine and flatten both metric dictionaries
+    return {**rejection_metrics, **classification_metrics}
