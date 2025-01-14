@@ -19,4 +19,4 @@ rejection_models:
 
 baseline_model:
   name: "baseline_cnn"
-  path: "./models/baseline_cnn.pth"  # Trained model weights
+  path: "/home/linuxu/afeka/computer-vision/baseline_cnn_trained.pth"  # Trained model weights

@@ -5,6 +5,7 @@ from tqdm import tqdm
 from models.baseline_cnn import BaselineCNN
 from io_utils import load_dataset_from_config
 from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast, GradScaler
 
 
 def train_model(model, train_loader, test_loader, device, config):
@@ -22,26 +23,31 @@ def train_model(model, train_loader, test_loader, device, config):
         torch.nn.Module: Trained model.
     """
     # Define loss function and optimizer
-    criterion = nn.BCELoss()  # Binary Cross-Entropy Loss
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
     num_epochs = config["num_epochs"]
     model.to(device)
 
+    scaler = GradScaler()  # Scale gradients to avoid underflow
     for epoch in range(num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}")
 
         # Training Phase
         model.train()
         train_loss = 0.0
+
         for images, labels in tqdm(train_loader, desc="Training"):
             images, labels = images.to(device), labels.float().to(device).unsqueeze(1)
 
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            with autocast():  # Use mixed precision
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+            scaler.scale(loss).backward()  # Scale the loss
+            scaler.step(optimizer)  # Step with scaled gradients
+            scaler.update()  # Update the scaler
 
             train_loss += loss.item()
 
@@ -82,15 +88,24 @@ def evaluate_model(model, data_loader, device, criterion):
         for images, labels in tqdm(data_loader, desc="Testing"):
             images, labels = images.to(device), labels.float().to(device).unsqueeze(1)
 
-            outputs = model(images)
+            # Forward pass
+            outputs = model(images)  # Outputs are logits
+
+            # Compute loss (logits are passed directly)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
 
-            # Compute accuracy
-            predictions = (outputs >= 0.5).float()  # Binary predictions
+            # Convert logits to probabilities
+            probabilities = torch.sigmoid(outputs)  # Apply sigmoid to logits
+
+            # Binary predictions
+            predictions = (probabilities >= 0.5).float()  # Threshold at 0.5
+
+            # Accuracy computation
             correct_predictions += (predictions == labels).sum().item()
             total_samples += labels.size(0)
 
+    # Compute average loss and accuracy
     average_loss = total_loss / len(data_loader)
     accuracy = (correct_predictions / total_samples) * 100
     return average_loss, accuracy
@@ -114,14 +129,14 @@ def train_baseline_convolution_model():
         train_dataset,
         batch_size=config["batch_size"],
         shuffle=True,
-        num_workers=4,  # Experiment with this value
+        num_workers=4,
         pin_memory=True,
     )
     test_loader = DataLoader(
         test_dataset,
         batch_size=config["batch_size"],
         shuffle=True,
-        num_workers=4,  # Experiment with this value
+        num_workers=4,
         pin_memory=True,
     )
 
@@ -136,7 +151,3 @@ def train_baseline_convolution_model():
     trained_model = train_model(model, train_loader, test_loader, device, config)
 
     return trained_model
-
-
-if __name__ == "__main__":
-    cnn_model = train_baseline_convolution_model()

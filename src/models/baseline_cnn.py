@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -17,5 +16,5 @@ class BaselineCNN(nn.Module):
         x = F.relu(self.conv1(x))  # Conv + ReLU
         x = self.pool(x)  # MaxPooling
         x = self.flatten(x)  # Flatten
-        x = torch.sigmoid(self.fc(x))  # Dense + Sigmoid
+        x = self.fc(x)
         return x
