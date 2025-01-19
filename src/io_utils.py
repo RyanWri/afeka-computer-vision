@@ -6,12 +6,18 @@ from models.rejection_gate import RejectionGate, RandomRejector
 from models.baseline_cnn import BaselineCNN
 
 
-def load_config(config_path):
+def load_config(config_path, add_experiment_paths):
     """
     Load YAML configuration file.
     """
+    # Load configuration
+    config_path = get_config_path(config_path)
     with open(config_path, "r") as file:
-        return yaml.safe_load(file)
+        config = yaml.safe_load(file)
+
+    config = resolve_experiment_paths(config) if add_experiment_paths else config
+
+    return config
 
 
 def load_rejection_model(rejection_model_config):
@@ -31,13 +37,16 @@ def load_rejection_model(rejection_model_config):
     return model
 
 
-def load_baseline_model(model_config):
+def load_baseline_model(model_config, device):
     """
     Load the baseline classification model.
     """
     cnn_model = BaselineCNN()
-    cnn_model.load_state_dict(torch.load(model_config["path"]))
+    cnn_model.load_state_dict(
+        torch.load(model_config["path"], map_location=device, weights_only=True)
+    )
     cnn_model.eval()
+    cnn_model.to(device)
     return cnn_model
 
 

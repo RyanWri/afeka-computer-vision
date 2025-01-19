@@ -1,8 +1,9 @@
 import os
 import h5py
 import torch
+from torch.utils.data import DataLoader, SubsetRandomSampler, Dataset
+import numpy as np
 from torchvision import datasets, transforms
-from torch.utils.data import Dataset
 
 
 class PCamHDF5Dataset(Dataset):
@@ -103,3 +104,16 @@ def load_dataset(dataset_dir, split):
         transform=normalize_transform,
     )
     return dataset
+
+
+def create_data_loader(dataset, sample_size, batch_size, num_workers):
+    if sample_size < len(dataset):
+        indices = np.random.choice(len(dataset), sample_size, replace=False)
+    else:
+        indices = np.arange(len(dataset))
+
+    sampler = SubsetRandomSampler(indices)
+    data_loader = DataLoader(
+        dataset, batch_size=batch_size, sampler=sampler, num_workers=num_workers
+    )
+    return data_loader

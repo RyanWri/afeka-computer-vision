@@ -13,18 +13,7 @@ def compute_rejection_metrics(results_df):
     """
     # True labels for rejection (1 if rejected, 0 if not)
     true_rejection_labels = results_df["reject"].astype(int)
-
-    # Placeholder for rejection confidences (use actual scores if available)
-    rejection_confidences = results_df["reject"].astype(float)
-
-    # Rejection metrics
-    rejection_rate = true_rejection_labels.mean()  # Proportion of rejected samples
-    auc_rejection = roc_auc_score(true_rejection_labels, rejection_confidences)
-
-    return {
-        "rejection_rate": rejection_rate,
-        "rejection_auc": auc_rejection,
-    }
+    return {"rejection_rate": true_rejection_labels.mean()}
 
 
 def compute_non_rejected_metrics(results_df):
@@ -38,7 +27,7 @@ def compute_non_rejected_metrics(results_df):
         dict: Flattened metrics for classification of non-rejected samples.
     """
     # Filter non-rejected samples
-    non_rejected = results_df[results_df["reject"] == False]
+    non_rejected = results_df[not results_df["reject"]]
 
     # Extract labels and predictions
     true_labels = non_rejected["label"].values
