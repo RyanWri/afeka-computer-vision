@@ -7,6 +7,7 @@ experiment:
 
 input:
   folder: "/home/ran/datasets/pcam"
+  reduce_to_center: false
 
 rejection_models:
   - name: "random_rejector"

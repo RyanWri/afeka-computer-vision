@@ -4,7 +4,11 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 
 
-def train_isolation_forest(images, n_estimators, max_samples, contamination, save_path):
+def train_isolation_forest(images, config):
+    n_estimators = config["n_estimators"]
+    max_samples = config["max_samples"]
+    contamination = config["contaimnation"]
+    save_path = config["save_path"]
     N, H, W, C = images.shape
     features = images.reshape(N, H * W * C)
     scaler = StandardScaler()
