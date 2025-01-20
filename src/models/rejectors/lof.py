@@ -1,6 +1,7 @@
 import joblib
 import numpy as np
 import logging
+import time
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler
 
@@ -30,11 +31,16 @@ def train_lof_model(images, config):
     scaler = StandardScaler()
     features_scaled = scaler.fit_transform(features)
 
+    logging.info("training lof model")
+    start = time.time()
     # Train LOF model and save
     lof = LocalOutlierFactor(
-        n_neighbors=n_neighbors, contamination=contamination, novelty=True
+        n_neighbors=n_neighbors,
+        contamination=contamination,
+        n_jobs=-1,
     )
     lof.fit(features_scaled)
+    logging.info(f"completed lof training in {time.time() - start:.2f} seconds")
     joblib.dump({"model": lof, "scaler": scaler}, save_path)
     return {"model": lof, "scaler": scaler}
 

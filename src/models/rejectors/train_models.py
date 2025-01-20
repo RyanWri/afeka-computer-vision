@@ -18,18 +18,18 @@ logging.info("Starting the training process")
 def train_rejection_models(models_config, images):
     for model_config in models_config:
         name = model_config["name"].lower()
-        if name == "lof":
+        enabled = model_config["enabled"]
+        if name == "lof" and enabled:
             train_lof_model(images, model_config)
 
-        elif name == "isolation forest":
+        elif name == "isolation forest" and enabled:
             train_isolation_forest(images, model_config)
 
         else:
             print(f"Unknown rejection model: {name}")
 
 
-if __name__ == "__main__":
-    config_path = "train_models.yaml"
+def train_rejection_models_from_config(config_path):
     config = load_config(config_path, add_experiment_paths=False)
 
     # Load input data
@@ -52,3 +52,8 @@ if __name__ == "__main__":
     logging.info("Training rejection models...")
     start = time.time()
     train_rejection_models(config["rejection_models"], images)
+
+
+if __name__ == "__main__":
+    config_path = "train_models.yaml"
+    train_rejection_models_from_config(config_path)

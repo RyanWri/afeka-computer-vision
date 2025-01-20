@@ -2,11 +2,12 @@ input:
   folder: "/home/ran/datasets/pcam"
   reduce_to_center: true
   batch_size: 32
+  sample_size: 0.5
 
 rejection_models:
   - name: "lof"
     save_path: "/home/ran/afeka/computer-vision/models/lof.joblib"
-    n_neighbors: 10
+    n_neighbors: 5
     contamination: 0.005
     enabled: true
     
