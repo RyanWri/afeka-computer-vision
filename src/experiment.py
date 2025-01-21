@@ -7,6 +7,7 @@ from io_utils import (
     load_baseline_model,
     initialize_rejection_gate,
 )
+from src.loaders import extract_center_patch
 
 
 def run_experiment(config):
@@ -44,8 +45,9 @@ def run_experiment(config):
         image = image.to(device)
         label = label.item()  # Convert label tensor to scalar
 
+        center_image = extract_center_patch(image, patch_size=32)
         # Apply rejection gate
-        is_rejected = rejection_gate.should_reject(image)
+        is_rejected = rejection_gate.should_reject(center_image)
 
         if not is_rejected:
             # If not rejected, classify using the CNN model

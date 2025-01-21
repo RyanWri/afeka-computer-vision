@@ -7,16 +7,18 @@ experiment:
 
 input:
   folder: "/home/linuxu/datasets/pcam"
+  reduce_to_center: false
 
 rejection_models:
-  - name: "random_rejector"
-    path: "./models/random_rejector.py"
-    weight: 0.3  # Weight for this model's rejection decision
+  - name: "lof"
+    path: "/home/linuxu/afeka/computer-vision/models/lof.joblib"
+    weight: 0.5  # Weight for this model's rejection decision
     
-  - name: "dummy_rejector"
-    path: "./models/dummy_rejector.py"
-    weight: 0.7  # Weight for this model's rejection decision
+  - name: "isolation_forest"
+    path: "/home/linuxu/afeka/computer-vision/models/isolation_forest.joblib"
+    weight: 0.5  # Weight for this model's rejection decision
 
 baseline_model:
   name: "baseline_cnn"
-  path: "/home/linuxu/afeka/computer-vision/baseline_cnn_trained.pth"  # Trained model weights
+  path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"  # Trained model weights
+  enabled: false

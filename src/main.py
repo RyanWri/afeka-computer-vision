@@ -1,21 +1,23 @@
 import pandas as pd
 import json
 import os
-from experiment import run_experiment
-from io_utils import load_config
-from metrics import summarize_metrics
-from train import train_baseline_convolution_model
+from src.experiment import run_experiment
+from src.io_utils import load_config
+from src.metrics import summarize_metrics
+from src.train import train_baseline_convolution_model
 
 
 if __name__ == "__main__":
-    experiment_name = "experiment_baseline_no_rejection"
     # Specify the configuration file path
+    experiment_name = "experiment_projlab"
     config_filename = f"{experiment_name}.yaml"  # Relative to the 'config' directory
-    config = load_config(config_filename)
+    config = load_config(config_filename, add_experiment_paths=True)
 
-    should_train_model = False
-    if should_train_model or not os.path.exists(config["baseline_model"]["path"]):
-        cnn_model = train_baseline_convolution_model(config["baseline_model"]["path"])
+    baseline_cnn_config = config["baseline_model"]
+    if baseline_cnn_config["enabled"] and not os.path.exists(
+        baseline_cnn_config["path"]
+    ):
+        cnn_model = train_baseline_convolution_model(baseline_cnn_config["path"])
         print("traine basedline convloution completed")
     else:
         print("no need to train cnn baseline, it exist")

@@ -2,7 +2,8 @@ import os
 import torch
 import yaml
 from src.loaders import load_dataset
-from src.models.rejection_gate import RejectionGate, RandomRejector
+from src.models.model_factory import ModelFactory
+from src.models.rejection_gate import RejectionGate
 from src.models.baseline_cnn import BaselineCNN
 
 
@@ -20,31 +21,12 @@ def load_config(config_path, add_experiment_paths):
     return config
 
 
-def load_rejection_model(rejection_model_config):
-    """
-    Load rejection models based on the provided configuration.
-    """
-    if rejection_model_config["name"] == "random_rejector":
-        model = RandomRejector(rejection_model_config["path"])
-
-    elif rejection_model_config["name"] == "dummy_rejector":
-        model = RandomRejector(
-            rejection_model_config["path"]
-        )  # Replace with real model when available
-    else:
-        raise ValueError(f"Unknown rejection model: {rejection_model_config['name']}")
-
-    return model
-
-
 def load_baseline_model(model_config, device):
     """
     Load the baseline classification model.
     """
     cnn_model = BaselineCNN()
-    cnn_model.load_state_dict(
-        torch.load(model_config["path"], map_location=device, weights_only=True)
-    )
+    cnn_model.load_state_dict(torch.load(model_config["path"], map_location=device))
     cnn_model.eval()
     cnn_model.to(device)
     return cnn_model
@@ -63,13 +45,15 @@ def initialize_rejection_gate(rejection_models_config, rejection_gate_threshold)
     """
     Initialize the rejection gate with models and thresholds from the configuration.
     """
-    rejection_models = []
+    rejection_models, rejection_weights = [], []
     for model_config in rejection_models_config:
-        rejection_models.append(load_rejection_model(model_config))
-
-    rejection_weights = [
-        model_config["weight"] for model_config in rejection_models_config
-    ]
+        # Create model instance
+        name, load_path = model_config["name"], model_config["path"]
+        model = ModelFactory.create_model(name)
+        # Load the model
+        model.load(load_path)
+        rejection_models.append(model)
+        rejection_weights.append(model_config["weight"])
 
     return RejectionGate(
         rejection_models=rejection_models,
