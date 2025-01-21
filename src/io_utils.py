@@ -1,9 +1,9 @@
 import os
 import torch
 import yaml
-from loaders import load_dataset
-from models.rejection_gate import RejectionGate, RandomRejector
-from models.baseline_cnn import BaselineCNN
+from src.loaders import load_dataset
+from src.models.rejection_gate import RejectionGate, RandomRejector
+from src.models.baseline_cnn import BaselineCNN
 
 
 def load_config(config_path, add_experiment_paths):
@@ -55,7 +55,8 @@ def load_dataset_from_config(config, split):
     Load the dataset specified in the configuration.
     """
     input_folder = config["input"]["folder"]
-    return load_dataset(input_folder, split)
+    reduce_to_center = config["input"]["reduce_to_center"]
+    return load_dataset(input_folder, split, reduce_to_center)
 
 
 def initialize_rejection_gate(rejection_models_config, rejection_gate_threshold):

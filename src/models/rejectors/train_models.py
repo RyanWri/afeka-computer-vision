@@ -1,14 +1,11 @@
 import logging
+import math
 import time
 import numpy as np
-from models.rejectors.lof import train_lof_model
-from models.rejectors.isolation_forest import train_isolation_forest
-import torch
-from train import (
-    train_baseline_convolution_model,
-)  # Assumes your CNN training function is here
-from io_utils import load_dataset_from_config, load_config
-from torch.utils.data import DataLoader
+from src.loaders import create_data_loader
+from src.models.rejectors.lof import train_lof_model
+from src.models.rejectors.isolation_forest import train_isolation_forest
+from src.io_utils import load_dataset_from_config, load_config
 
 
 logging.basicConfig(
@@ -17,84 +14,42 @@ logging.basicConfig(
 logging.info("Starting the training process")
 
 
-def train_rejection_models(config, train_loader):
-    images = []
-    star = time.time()
-    for batch in train_loader:
-        inputs, _ = batch
-        images.extend(
-            inputs.numpy()
-        )  # Assuming the images are tensors and need to be converted to NumPy arrays
-
-    # Convert list to a NumPy array
-    images = np.array(images)
-    logging.info(f"Loaded {len(images)} images in {time.time() - star:.2f} seconds")
-
-    for model_config in config["rejection_models"]:
-        name = model_config["name"].lower()
-        save_path = model_config["save_path"]
-
-        if name == "lof":
-            train_lof_model(
-                images=images,
-                n_neighbors=model_config["n_neighbors"],
-                contamination=model_config["contamination"],
-                save_path=save_path,
-            )
-            print(f"Trained and saved LOF model to {save_path}")
-
-        elif name == "isolation forest":
-            train_isolation_forest(
-                images=images,
-                n_estimators=model_config["n_estimators"],
-                max_samples=model_config["max_samples"],
-                contamination=model_config["contamination"],
-                save_path=save_path,
-            )
-            print(f"Trained and saved Isolation Forest model to {save_path}")
-
-        else:
-            print(f"Unknown rejection model: {name}")
-
-
-def train_baseline_model(config, train_loader, test_loader, device):
-    baseline_config = config["baseline_model"]
-    if baseline_config["enabled"]:
-        model = train_baseline_convolution_model(
-            train_loader=train_loader,
-            test_loader=test_loader,
-            device=device,
-            save_path=baseline_config["save_path"],
-        )
-        print(f"Trained and saved baseline CNN to {baseline_config['save_path']}")
-    else:
-        print("Baseline CNN training skipped (enabled=false)")
-
-
-def main(config_path):
-    # Load configuration
+def train_rejection_models_from_config(config_path):
     config = load_config(config_path, add_experiment_paths=False)
 
-    # Load input data
-    train_dataset = load_dataset_from_config(
-        config, split="train"
-    )  # Implement a function to load Patch Camelyon data
-    test_dataset = load_dataset_from_config(
-        config, split="test"
-    )  # Implement a function to load Patch Camelyon data
+    for model_config in config["rejection_models"]:
+        model_name = model_config["name"].lower()
+        batch_size, sample_size = (
+            model_config["input"]["batch_size"],
+            model_config["input"]["sample_size"],
+        )
 
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+        # Load input data
+        train_dataset = load_dataset_from_config(
+            model_config, split="train"
+        )  # Implement a function to load Patch Camelyon data
+        sample_size = math.floor(len(train_dataset) * sample_size)
+        train_loader = create_data_loader(
+            train_dataset, sample_size=sample_size, batch_size=batch_size, num_workers=2
+        )
+        logging.info("start loading images")
+        start = time.time()
+        tensors = []
+        for tensor, labels in train_loader:
+            tensors.append(tensor.numpy())
+        images = np.concatenate(tensors)
+        logging.info(
+            f"Loaded {len(images)} images in {time.time() - start:.2f} seconds"
+        )
 
-    # Train rejection models
-    train_rejection_models(config, train_loader)
+        policy = model_config["policy"]
+        if model_name == "lof" and policy["enabled"]:
+            train_lof_model(images, policy)
 
-    # Train baseline model
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    train_baseline_model(config, train_loader, test_loader, device)
+        if model_name == "isolation_forest" and policy["enabled"]:
+            train_isolation_forest(images, policy)
 
 
 if __name__ == "__main__":
     config_path = "train_models.yaml"
-    main(config_path)
+    train_rejection_models_from_config(config_path)
