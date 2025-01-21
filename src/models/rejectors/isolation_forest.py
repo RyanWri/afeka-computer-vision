@@ -1,11 +1,17 @@
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import joblib
+import logging
+import time
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logging.info("Starting the training process")
 
 
 def train_isolation_forest(images, config):
     n_estimators = config["n_estimators"]
-    max_samples = config["max_samples"]
     contamination = config["contamination"]
     save_path = config["save_path"]
     N, H, W, C = images.shape
@@ -15,13 +21,15 @@ def train_isolation_forest(images, config):
 
     model = IsolationForest(
         n_estimators=n_estimators,
-        max_samples=max_samples,
         contamination=contamination,
-        random_state=42,
         n_jobs=-1,
     )
+    logging.info("training isolation forest model")
+    start = time.time()
     model.fit(features_scaled)
-
+    logging.info(
+        f"completed isolation forest training in {time.time() - start:.2f} seconds"
+    )
     joblib.dump({"model": model, "scaler": scaler}, save_path)
     return {"model": model, "scaler": scaler}
 
