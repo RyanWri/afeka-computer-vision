@@ -1,5 +1,7 @@
 import joblib
 
+from src.loaders import extract_center_patch
+
 
 # Base class
 class BaseModel:
@@ -24,9 +26,11 @@ class LOFModel(BaseModel):
         return self.calc_score(image)
 
     def calc_score(self, image):
-        for k, v in self.model:
-            print(k)
-            print(v)
+        center_image = extract_center_patch(image, patch_size=32)
+        features = center_image.reshape(1, 32 * 32 * 3)  # Reshape to (1, features)
+        features_scaled = self.model["scaler"].transform(features)
+        lof_score = -self.model["model"].negative_outlier_factor_(features_scaled)
+        return lof_score
 
 
 # Isolation Forest Model
@@ -37,8 +41,11 @@ class IsolationForestModel(BaseModel):
             raise ValueError("Model not loaded. Call `load` first.")
         return self.calc_score(image)
 
-        def calc_score(self, image):
-            return 1
+    def calc_score(self, image):
+        center_image = extract_center_patch(image, patch_size=32)
+        features = center_image.reshape(1, 32 * 32 * 3)  # Reshape to (1, features)
+        features_scaled = self.model["scaler"].transform(features)
+        return -self.model["model"].decision_function(features_scaled)
 
 
 # Factory class

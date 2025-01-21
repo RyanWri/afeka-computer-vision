@@ -53,7 +53,8 @@ class RejectionGate:
         Returns:
             bool: True if rejected, False otherwise.
         """
-        confidence = self.compute_rejection_confidence(input_data)
+        image = torch.squeeze(input_data)
+        confidence = self.compute_rejection_confidence(image)
         return confidence > self.threshold
 
 

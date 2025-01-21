@@ -1,22 +1,26 @@
 experiment:
-  name: "baseline_with_rejection"
-  alias: "experiment_01"  # Unique alias for the experiment
+  name: "baseline_with_2_r3_rejectors"
+  alias: "experiment_02"  # Unique alias for the experiment
   base_root: "/home/ran/afeka/computer-vision"  # Base directory for all experiment outputs
   batch_size: 1
   rejection_gate_threshold: 0.5
+  description: "Baseline with 2 rejection models lof and isolation forest, same weight"
 
 input:
   folder: "/home/ran/datasets/pcam"
+  reduce_to_center: false
 
 rejection_models:
-  - name: "random_rejector"
-    path: "./models/random_rejector.py"
-    weight: 0.3  # Weight for this model's rejection decision
+  - name: "lof"
+    path: "/home/ran/afeka/computer-vision/models/lof.joblib"
+    weight: 0.5  # Weight for this model's rejection decision
     
-  - name: "dummy_rejector"
-    path: "./models/dummy_rejector.py"
-    weight: 0.7  # Weight for this model's rejection decision
+  - name: "isolation_forest"
+    path: "/home/ran/afeka/computer-vision/models/isolation_forest.joblib"
+    weight: 0.5  # Weight for this model's rejection decision
 
 baseline_model:
   name: "baseline_cnn"
   path: "/home/ran/afeka/computer-vision/baseline_cnn_trained.pth"  # Trained model weights
+  enabled: false
+

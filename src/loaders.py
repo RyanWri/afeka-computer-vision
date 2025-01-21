@@ -135,6 +135,7 @@ def extract_center_patch(image, patch_size):
     Returns:
         array: The extracted center patch.
     """
-    center_start = (image.shape[0] - patch_size) // 2
+    C, H, W = image.shape
+    center_start = (H - patch_size) // 2
     center_end = center_start + patch_size
-    return image[center_start:center_end, center_start:center_end, :]
+    return image[:, center_start:center_end, center_start:center_end]

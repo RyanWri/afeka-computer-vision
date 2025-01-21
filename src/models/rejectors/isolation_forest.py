@@ -32,22 +32,3 @@ def train_isolation_forest(images, config):
     )
     joblib.dump({"model": model, "scaler": scaler}, save_path)
     return {"model": model, "scaler": scaler}
-
-
-def load_isolation_forest(load_path):
-    return joblib.load(load_path)
-
-
-def compute_isolation_scores(model_data, images):
-    N, H, W, C = images.shape
-    features = images.reshape(N, H * W * C)
-    features_scaled = model_data["scaler"].transform(features)
-
-    model = model_data["model"]
-    return -model.decision_function(features_scaled)
-
-
-def reject_images(model_data, images, threshold):
-    scores = compute_isolation_scores(model_data, images)
-    rejected = scores >= threshold
-    return rejected, scores

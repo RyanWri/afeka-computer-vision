@@ -43,26 +43,3 @@ def train_lof_model(images, config):
     logging.info(f"completed lof training in {time.time() - start:.2f} seconds")
     joblib.dump({"model": lof, "scaler": scaler}, save_path)
     return {"model": lof, "scaler": scaler}
-
-
-def load_lof_model(load_path):
-    return joblib.load(load_path)
-
-
-def compute_lof_scores(lof_data, images):
-    # Flatten and scale images
-    N, H, W, C = images.shape
-    features = images.reshape(N, H * W * C)
-    features_scaled = lof_data["scaler"].transform(features)
-
-    # Compute LOF scores
-    lof_model = lof_data["model"]
-    return -lof_model.decision_function(
-        features_scaled
-    )  # Negative scores indicate outliers
-
-
-def reject_images(lof_data, images, threshold):
-    lof_scores = compute_lof_scores(lof_data, images)
-    rejected = lof_scores >= threshold
-    return rejected, lof_scores
