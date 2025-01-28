@@ -2,8 +2,6 @@ import os
 import torch
 import yaml
 from src.loaders import load_dataset
-from src.models.model_factory import ModelFactory
-from src.models.rejection_gate import RejectionGate
 from src.models.baseline_cnn import BaselineCNN
 
 
@@ -38,27 +36,6 @@ def load_dataset_from_config(config, split):
     """
     input_folder = config["input"]["folder"]
     return load_dataset(input_folder, split)
-
-
-def initialize_rejection_gate(rejection_models_config, rejection_gate_threshold):
-    """
-    Initialize the rejection gate with models and thresholds from the configuration.
-    """
-    rejection_models, rejection_weights = [], []
-    for model_config in rejection_models_config:
-        # Create model instance
-        name, load_path = model_config["name"], model_config["path"]
-        model = ModelFactory.create_model(name)
-        # Load the model
-        model.load(load_path)
-        rejection_models.append(model)
-        rejection_weights.append(model_config["weight"])
-
-    return RejectionGate(
-        rejection_models=rejection_models,
-        weights=rejection_weights,
-        threshold=rejection_gate_threshold,
-    )
 
 
 def get_config_path(relative_path):

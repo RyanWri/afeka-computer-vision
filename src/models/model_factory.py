@@ -14,8 +14,9 @@ logging.info("Starting the training process")
 
 # Base class
 class BaseModel:
-    def __init__(self):
+    def __init__(self, weight):
         self.model = None
+        self.weight = weight
 
     def load(self, load_path):
         """Load the model from the specified path."""
@@ -35,12 +36,9 @@ class LOFModel(BaseModel):
         """Override the predict method for LOF."""
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
-        return self.calc_score(features)
-
-    def calc_score(self, features):
         features_scaled = self.model["scaler"].transform(features)
         lof_score = -self.model["model"].negative_outlier_factor_(features_scaled)
-        return lof_score
+        return round(lof_score * self.weight, 5)
 
     def train(self, features, config: dict):
         n_neighbors = config["n_neighbors"]
@@ -69,11 +67,9 @@ class IsolationForestModel(BaseModel):
         """Override the predict method for Isolation Forest."""
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
-        return self.calc_score(features)
-
-    def calc_score(self, features):
         features_scaled = self.model["scaler"].transform(features)
-        return -self.model["model"].decision_function(features_scaled)
+        if_score = -self.model["model"].decision_function(features_scaled)
+        return round(if_score * self.weight, 5)
 
     def train(self, features, config: dict):
         n_estimators = config["n_estimators"]
@@ -102,7 +98,8 @@ class OneClassSVMModel(BaseModel):
             raise ValueError("Model not loaded. Call `load` first.")
         features = features.reshape(1, -1)
         features_scaled = self.model["scaler"].transform(features)
-        return self.model["model"].predict(features_scaled)
+        osvm_score = float(self.model["model"].predict(features_scaled))
+        return round(osvm_score * self.weight, 5)
 
     def train(self, features, config: dict):
         nu = config["nu"]
@@ -126,12 +123,12 @@ class OneClassSVMModel(BaseModel):
 # Factory class
 class ModelFactory:
     @staticmethod
-    def create_model(model_type):
+    def create_model(model_type, weight):
         if model_type == "lof":
-            return LOFModel()
+            return LOFModel(weight)
         elif model_type == "isolation_forest":
-            return IsolationForestModel()
+            return IsolationForestModel(weight)
         elif model_type == "one-class-svm":
-            return OneClassSVMModel()
+            return OneClassSVMModel(weight)
         else:
             raise ValueError(f"Unknown model type: {model_type}")

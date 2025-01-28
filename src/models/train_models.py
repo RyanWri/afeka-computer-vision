@@ -71,9 +71,7 @@ def extract_features_from_loader(data_loader, feature_extractor, device):
             images = images.to(device)  # Move images to the specified device
             features = feature_extractor(images)  # Extract features
             features = features.view(features.size(0), -1)  # Flatten features
-            all_features.append(
-                features.cpu().numpy()
-            )  # Move to CPU and convert to numpy
+            all_features.append(features.cpu().numpy())
 
     return np.vstack(all_features)  # Stack all features into one array
 

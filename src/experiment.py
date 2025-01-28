@@ -1,7 +1,5 @@
 import pandas as pd
-from io_utils import (
-    initialize_rejection_gate,
-)
+from src.models.rejection_gate import RejectionGate
 from src.models.train_models import get_features
 
 
@@ -13,9 +11,7 @@ def run_experiment(config):
     features = get_features(config, split)
 
     # Initialize rejection gate
-    rejection_gate = initialize_rejection_gate(
-        config["rejection_models"], config["experiment"]["rejection_gate_threshold"]
-    )
+    rejection_gate = RejectionGate(config["rejection_models"])
 
     # Prepare results storage
     results = []
