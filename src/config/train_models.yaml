@@ -1,10 +1,23 @@
 rejection_models:
+- name: "one-class-svm"
+  input:
+    folder: "/home/ran/datasets/pcam"
+    reduce_to_center: false
+    batch_size: 64
+    sample_size: 0.01
+  policy:
+    save_path: "/home/ran/afeka/computer-vision/models/one-class-svm.joblib"
+    enabled: true
+    nu: 0.1
+    kernel: "rbf"
+    gamma: "scale"
+
 - name: "lof"
   input:
     folder: "/home/ran/datasets/pcam"
-    reduce_to_center: true
+    reduce_to_center: false
     batch_size: 64
-    sample_size: 0.15
+    sample_size: 0.05
   policy:
     save_path: "/home/ran/afeka/computer-vision/models/lof.joblib"
     n_neighbors: 12
@@ -14,9 +27,9 @@ rejection_models:
 - name: "isolation_forest"
   input:
     folder: "/home/ran/datasets/pcam"
-    reduce_to_center: true
+    reduce_to_center: false
     batch_size: 32
-    sample_size: 0.8
+    sample_size: 0.10
   policy:
     save_path: "/home/ran/afeka/computer-vision/models/isolation_forest.joblib"
     max_samples: 32768
