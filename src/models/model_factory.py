@@ -4,7 +4,6 @@ import logging
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
-from src.loaders import extract_center_patch
 from sklearn.neighbors import LocalOutlierFactor
 
 logging.basicConfig(
@@ -22,7 +21,7 @@ class BaseModel:
         """Load the model from the specified path."""
         self.model = joblib.load(load_path)
 
-    def predict(self, image):
+    def predict(self, features):
         """Make predictions using the model."""
         raise NotImplementedError("Subclasses must implement the `predict` method.")
 
@@ -32,15 +31,13 @@ class BaseModel:
 
 # LOF Model
 class LOFModel(BaseModel):
-    def predict(self, image):
+    def predict(self, features):
         """Override the predict method for LOF."""
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
-        return self.calc_score(image)
+        return self.calc_score(features)
 
-    def calc_score(self, image):
-        center_image = extract_center_patch(image, patch_size=32)
-        features = center_image.reshape(1, 32 * 32 * 3)  # Reshape to (1, features)
+    def calc_score(self, features):
         features_scaled = self.model["scaler"].transform(features)
         lof_score = -self.model["model"].negative_outlier_factor_(features_scaled)
         return lof_score
@@ -68,15 +65,13 @@ class LOFModel(BaseModel):
 
 # Isolation Forest Model
 class IsolationForestModel(BaseModel):
-    def predict(self, image):
+    def predict(self, features):
         """Override the predict method for Isolation Forest."""
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
-        return self.calc_score(image)
+        return self.calc_score(features)
 
-    def calc_score(self, image):
-        center_image = extract_center_patch(image, patch_size=32)
-        features = center_image.reshape(1, 32 * 32 * 3)  # Reshape to (1, features)
+    def calc_score(self, features):
         features_scaled = self.model["scaler"].transform(features)
         return -self.model["model"].decision_function(features_scaled)
 
@@ -102,12 +97,10 @@ class IsolationForestModel(BaseModel):
 
 
 class OneClassSVMModel(BaseModel):
-    def predict(self, image):
+    def predict(self, features):
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
-        return self.calc_score(image)
-
-    def calc_score(self, features):
+        features = features.reshape(1, -1)
         features_scaled = self.model["scaler"].transform(features)
         return self.model["model"].predict(features_scaled)
 
@@ -138,7 +131,7 @@ class ModelFactory:
             return LOFModel()
         elif model_type == "isolation_forest":
             return IsolationForestModel()
-        elif model_type == "one_class_svm":
+        elif model_type == "one-class-svm":
             return OneClassSVMModel()
         else:
             raise ValueError(f"Unknown model type: {model_type}")

@@ -6,7 +6,7 @@ import numpy as np
 from src.feature_extractor import SingleConvFeatureExtractor
 from src.loaders import create_data_loader
 from src.io_utils import load_dataset_from_config, load_config
-from model_factory import ModelFactory  # Import the ModelFactory
+from src.models.model_factory import ModelFactory
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -23,14 +23,14 @@ def train_rejection_models_from_config(config_path):
         if not model_config.get("policy", {}).get("enabled", False):
             logging.info(f"Skipping disabled model: {model_name}")
             continue
-        features = get_features(model_config)
+        features = get_features(model_config, split="train")
         model = ModelFactory.create_model(model_name)  # Dynamically create the model
         model.train(
             features, model_config["policy"]
         )  # Train the model using the extracted features
 
 
-def get_features(model_config):
+def get_features(model_config, split):
     # Extract features
     feature_extractor = SingleConvFeatureExtractor(input_channels=3, output_channels=32)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -42,7 +42,7 @@ def get_features(model_config):
 
     # Load the dataset
     train_dataset = load_dataset_from_config(
-        model_config, split="train"
+        model_config, split
     )  # Implement a function to load Patch Camelyon data
     sample_size = math.floor(len(train_dataset) * sample_size)
     train_loader = create_data_loader(

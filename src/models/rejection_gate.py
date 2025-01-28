@@ -1,4 +1,3 @@
-import random
 import torch  # For parallel predictions
 
 
@@ -35,9 +34,7 @@ class RejectionGate:
             float: Rejection confidence between 0 and 1.
         """
         # Predict rejection probabilities for all models
-        predictions = torch.tensor(
-            [model.predict(input_data) for model in self.rejection_models]
-        )
+        predictions = [model.predict(input_data) for model in self.rejection_models]
 
         # Weighted sum of predictions
         confidence = (predictions * self.weights).sum().item()
@@ -56,14 +53,3 @@ class RejectionGate:
         image = torch.squeeze(input_data)
         confidence = self.compute_rejection_confidence(image)
         return confidence > self.threshold
-
-
-class RandomRejector:
-    def __init__(self, path):
-        self.path = path
-
-    def predict(self, input_data):
-        """
-        Dummy rejection model that returns a random rejection probability.
-        """
-        return random.random()

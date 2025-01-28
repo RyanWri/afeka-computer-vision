@@ -1,75 +1,38 @@
 import pandas as pd
-import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
 from io_utils import (
-    load_dataset_from_config,
-    load_baseline_model,
     initialize_rejection_gate,
 )
+from src.models.train_models import get_features
 
 
 def run_experiment(config):
     """
     Run the experiment pipeline based on the loaded configuration.
     """
-    # Load test dataset only
-    test_dataset = load_dataset_from_config(config, split="test")
-
-    # Create DataLoader with shuffle and pin memory
-    data_loader = DataLoader(
-        test_dataset,
-        batch_size=1,  # Batch size of 1 to process individual images
-        shuffle=True,  # Enable shuffling
-        pin_memory=True,  # Use pinned memory for faster GPU transfers
-        num_workers=4,
-    )
+    split = config["input"]["split"]
+    features = get_features(config, split)
 
     # Initialize rejection gate
     rejection_gate = initialize_rejection_gate(
         config["rejection_models"], config["experiment"]["rejection_gate_threshold"]
     )
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Load the baseline convolution model in evaluation mode
-    cnn_model = load_baseline_model(config["baseline_model"], device)
-
     # Prepare results storage
     results = []
 
-    # Process each image in the test dataset
-    for idx, (image, label) in tqdm(
-        enumerate(data_loader), total=len(data_loader), desc="Processing Images"
-    ):
-        image = image.to(device)
-        label = label.item()  # Convert label tensor to scalar
-        # Apply rejection gate
-        is_rejected = rejection_gate.should_reject(image)
-
-        if not is_rejected:
-            # If not rejected, classify using the CNN model
-            with torch.no_grad():
-                logits = cnn_model(image)  # Get logits
-                probability = torch.sigmoid(logits).item()  # Apply sigmoid
-                predicted_label = 1 if probability >= 0.5 else 0  # Threshold at 0.5
-        else:
-            # For rejected samples, no prediction
-            probability = None
-            predicted_label = None
-
-        # Store results
-        results.append(
-            {
-                "img_id": f"img_{idx}",  # Unique ID for each image
-                "reject": is_rejected,
-                "label": label,  # Ground truth label
-                "probability": probability,  # Probability if not rejected
-                "predicted_label": predicted_label,  # Predicted label if not rejected
-            }
-        )
+    for feature in features:
+        reject_score = rejection_gate.compute_rejection_confidence(feature)
+        results.append(reject_score)
 
     # Save results to Parquet
+    baseline_model_config = config["baseline_model"]
+    baseline_results_df = pd.read_parquet(baseline_model_config["original_results"])
+    baseline_results_df["probability"] = round(baseline_results_df["probability"], 5)
+    baseline_results_df["margin"] = abs(baseline_results_df["probability"] - 0.5)
+    baseline_results_df["margin"] = baseline_results_df["margin"].astype(float)
+
     results_path = config["experiment"]["results_path"]
-    results_df = pd.DataFrame(results)
+    results_df = baseline_results_df
+    results_df["reject_score"] = results
     results_df.to_parquet(results_path, engine="pyarrow")
     print(f"Experiment results saved to {results_path}")

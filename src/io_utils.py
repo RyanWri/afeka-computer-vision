@@ -37,8 +37,7 @@ def load_dataset_from_config(config, split):
     Load the dataset specified in the configuration.
     """
     input_folder = config["input"]["folder"]
-    reduce_to_center = config["input"]["reduce_to_center"]
-    return load_dataset(input_folder, split, reduce_to_center)
+    return load_dataset(input_folder, split)
 
 
 def initialize_rejection_gate(rejection_models_config, rejection_gate_threshold):
