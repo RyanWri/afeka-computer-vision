@@ -1,9 +1,9 @@
 # Core dependencies
 numpy>=1.19.2,<2.0.0          # Compatible with PyTorch 1.12.1
 pandas>=1.1.0,<2.0.0          # Compatible with NumPy and stable releases
-matplotlib>=3.3.0,<4.0.0      # Compatible with stable Python versions
 scikit-learn>=0.24.0,<2.0.0   # Ensures compatibility with other numerical libraries
-
+matplotlib
+seaborn
 # PyTorch dependencies
 torch==1.12.1         # PyTorch with CUDA 11.4 support
 torchvision==0.13.1     # Compatible torchvision for CUDA 11.4
