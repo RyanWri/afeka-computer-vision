@@ -1,11 +1,10 @@
 import logging
-import math
 import time
 import torch
 import numpy as np
-from src.feature_extractor import SingleConvFeatureExtractor
-from src.loaders import create_data_loader
-from src.io_utils import load_dataset_from_config, load_config
+from src.loaders import create_data_loader, load_dataset
+from src.io_utils import load_config
+from src.models.baseline_cnn import BaselineCNN
 from src.models.model_factory import ModelFactory
 
 logging.basicConfig(
@@ -17,63 +16,55 @@ logging.info("Starting the training process")
 def train_rejection_models_from_config(config_path):
     # Load the configuration
     config = load_config(config_path, add_experiment_paths=False)
+    features, labels = get_features(config, split="train")
 
     for model_config in config["rejection_models"]:
         model_name = model_config["name"].lower()
         if not model_config.get("policy", {}).get("enabled", False):
             logging.info(f"Skipping disabled model: {model_name}")
             continue
-        features = get_features(model_config, split="train")
-        model = ModelFactory.create_model(model_name)  # Dynamically create the model
-        model.train(
-            features, model_config["policy"]
-        )  # Train the model using the extracted features
+        # Dynamically create the model
+        model = ModelFactory.create_model(model_name, weight=model_config["weight"])
+        # Train the model using the extracted features
+        model.train(features, labels, model_config["policy"])
 
 
-def get_features(model_config, split):
-    # Extract features
-    feature_extractor = SingleConvFeatureExtractor(input_channels=3, output_channels=32)
+def get_features(config, split):
+    """Extracts features using the trained BaselineCNN model."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    batch_size, sample_size = (
-        model_config["input"]["batch_size"],
-        model_config["input"]["sample_size"],
+    model = BaselineCNN().to(device)
+    model.load_state_dict(
+        torch.load(config["baseline_model"]["save_path"], map_location=device)
     )
+    model.eval()
 
-    # Load the dataset
-    train_dataset = load_dataset_from_config(
-        model_config, split
-    )  # Implement a function to load Patch Camelyon data
-    sample_size = math.floor(len(train_dataset) * sample_size)
+    input_folder, batch_size, sample_size = config["input"].values()
+    train_dataset = load_dataset(input_folder, split="train")
+    sample_size = int(len(train_dataset) * sample_size)
     train_loader = create_data_loader(
         train_dataset, sample_size=sample_size, batch_size=batch_size, num_workers=2
     )
 
-    logging.info("Extracting features")
+    logging.info("Extracting features with BaselineCNN")
     start = time.time()
 
-    features = extract_features_from_loader(train_loader, feature_extractor, device)
-    logging.info(
-        f"Extracted features from {len(features)} images in {time.time() - start:.2f} seconds"
-    )
-
-    return features
-
-
-def extract_features_from_loader(data_loader, feature_extractor, device):
-    feature_extractor = feature_extractor.to(device)
-    feature_extractor.eval()
-
     all_features = []
-
+    all_labels = []
     with torch.no_grad():
-        for images, labels in data_loader:
-            images = images.to(device)  # Move images to the specified device
-            features = feature_extractor(images)  # Extract features
-            features = features.view(features.size(0), -1)  # Flatten features
-            all_features.append(features.cpu().numpy())
+        for images, labels in train_loader:
+            images = images.to(device)
+            features = model(images, return_features=True)  # Extract features
+            features = features.view(features.size(0), -1).cpu().numpy()
+            all_features.append(features)
+            all_labels.append(labels.cpu().numpy())
 
-    return np.vstack(all_features)  # Stack all features into one array
+    features_array = np.vstack(all_features)
+    labels_array = np.hstack(all_labels)
+
+    logging.info(
+        f"Extracted features from {len(features_array)} images in {time.time() - start:.2f} seconds"
+    )
+    return features_array, labels_array
 
 
 if __name__ == "__main__":
