@@ -1,0 +1,25 @@
+input:
+    folder: "/home/linuxu/datasets/pcam"
+    batch_size: 64
+    sample_size: 0.3
+
+rejection_models:
+  enabled: false
+  models:
+  - name: "mahalanobis"
+    weight: 1
+    policy:
+      save_path: "/home/linuxu/afeka/computer-vision/models/mahalanobis.joblib"
+    
+baseline_model:
+  name: "baseline_cnn"
+  train:
+    enabled: true
+    learning_rate: 0.001
+    epochs: 20
+    save_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
+  inference:
+    enabled: true
+    load_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
+    original_results: "/home/linuxu/afeka/computer-vision/results/baseline_no_rejection.csv"
+

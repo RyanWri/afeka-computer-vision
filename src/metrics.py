@@ -1,11 +1,10 @@
+import pandas as pd
 from sklearn.metrics import (
     roc_auc_score,
     accuracy_score,
     precision_score,
     recall_score,
     f1_score,
-    confusion_matrix,
-    classification_report,
 )
 
 
@@ -77,7 +76,11 @@ def summarize_metrics(results_df):
     return {**rejection_metrics, **classification_metrics}
 
 
-def calculate_metrics(df, label_col, pred_col):
+def calculate_metrics(file_path: str, label_col: str, pred_col: str) -> dict:
+    df = df = pd.read_csv(file_path, index_col=0)
+    df[label_col] = df[label_col].astype(int)
+    df[pred_col] = df[pred_col].astype(int)
+
     y_true = df[label_col].values
     y_pred = df[pred_col].values
 
@@ -89,11 +92,5 @@ def calculate_metrics(df, label_col, pred_col):
         ),  # Adjust average for multi-class
         "recall": recall_score(y_true, y_pred, average="binary"),
         "f1_score": f1_score(y_true, y_pred, average="binary"),
-        "confusion_matrix": confusion_matrix(
-            y_true, y_pred
-        ).tolist(),  # Convert to list for readability
-        "classification_report": classification_report(
-            y_true, y_pred, output_dict=True
-        ),
     }
     return metrics

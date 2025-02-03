@@ -1,10 +1,12 @@
 import joblib
 import time
 import logging
+import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
 from sklearn.neighbors import LocalOutlierFactor
+from sklearn.covariance import EmpiricalCovariance
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -26,7 +28,7 @@ class BaseModel:
         """Make predictions using the model."""
         raise NotImplementedError("Subclasses must implement the `predict` method.")
 
-    def train(self, features, config: dict):
+    def train(self, features, labels, config: dict):
         raise NotImplementedError("Subclasses must implement the `train` method.")
 
 
@@ -120,15 +122,68 @@ class OneClassSVMModel(BaseModel):
         logging.info(f"one class svm model saved at {save_path}")
 
 
+class MahalanobisModel(BaseModel):
+    def predict(self, features):
+        if self.model is None:
+            raise ValueError("Model not loaded. Call `load` first.")
+
+        features_scaled = self.model["scaler"].transform(features)
+        distances = []
+
+        for cls in self.model["class_means"]:
+            mean = self.model["class_means"][cls]
+            cov = self.model["class_covariances"][cls]
+            dist = self._mahalanobis_distance(features_scaled, mean, cov)
+            distances.append(dist)
+
+        return round(min(distances) * self.weight, 5)
+
+    def train(self, features, labels, config: dict):
+        save_path = config["save_path"]
+        scaler = StandardScaler()
+        features_scaled = scaler.fit_transform(features)
+
+        logging.info("Extracting class-wise means and covariances")
+        start = time.time()
+
+        class_means = {}
+        class_covariances = {}
+
+        unique_classes = np.unique(labels)
+        for cls in unique_classes:
+            cls_features = features_scaled[labels == cls]
+            mean_vec = np.mean(cls_features, axis=0)
+            cov_mat = EmpiricalCovariance().fit(cls_features)
+            class_means[cls] = mean_vec
+            class_covariances[cls] = cov_mat
+
+        logging.info(f"Completed training in {time.time() - start:.2f} seconds")
+        joblib.dump(
+            {
+                "class_means": class_means,
+                "class_covariances": class_covariances,
+                "scaler": scaler,
+            },
+            save_path,
+        )
+        logging.info(f"Mahalanobis model saved at {save_path}")
+
+    def _mahalanobis_distance(self, x, mean, cov):
+        diff = x - mean
+        inv_cov = np.linalg.inv(cov.covariance_)
+        return np.sqrt(np.dot(np.dot(diff.T, inv_cov), diff))
+
+
 # Factory class
 class ModelFactory:
     @staticmethod
     def create_model(model_type, weight):
         if model_type == "lof":
             return LOFModel(weight)
-        elif model_type == "isolation_forest":
+        if model_type == "isolation_forest":
             return IsolationForestModel(weight)
-        elif model_type == "one-class-svm":
+        if model_type == "one-class-svm":
             return OneClassSVMModel(weight)
-        else:
-            raise ValueError(f"Unknown model type: {model_type}")
+        if model_type == "mahalanobis":
+            return MahalanobisModel(weight)
+        raise ValueError(f"Unknown model type: {model_type}")

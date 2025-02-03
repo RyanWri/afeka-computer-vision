@@ -1,23 +1,24 @@
 experiment:
-  name: "baseline_svm"
-  alias: "experiment_03"  # Unique alias for the experiment
-  base_root: "/home/ran/afeka/computer-vision"  # Base directory for all experiment outputs
+  name: "baseline_mahalanobis"
+  alias: "experiment_01"  # Unique alias for the experiment
+  base_root: "/home/linuxu/afeka/computer-vision"  # Base directory for all experiment outputs
   rejection_gate_threshold: 0.5
-  description: "one class svm"
+  description: "mahalanobis"
 
 input:
   folder: "/home/ran/datasets/pcam"
-  reduce_to_center: false
-  batch_size: 32
-  sample_size: 1
-  split: "test"
+  batch_size: 128
+  sample_size: 0.33
 
 rejection_models:
-  - name: "one-class-svm"
-    path: "/home/ran/afeka/computer-vision/models/one-class-svm.joblib"
-    weight: 1
+- name: "mahalanobis"
+  weight: 1
+  policy:
+    save_path: "/home/linuxu/afeka/computer-vision/models/mahalanobis.joblib"
+    enabled: true
+  
 
 baseline_model:
-  original_results: "/home/ran/afeka/computer-vision/experiment_baseline_no_rejection/results.parquet"
-  original_metrics: "/home/ran/afeka/computer-vision/experiment_baseline_no_rejection/metrics.json"
+  original_results: "/home/linuxu/afeka/computer-vision/experiment_baseline_no_rejection/results.parquet"
+  original_metrics: "/home/linuxu/afeka/computer-vision/experiment_baseline_no_rejection/metrics.json"
 
