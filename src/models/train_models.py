@@ -65,8 +65,3 @@ def get_features(config, split):
         f"Extracted features from {len(features_array)} images in {time.time() - start:.2f} seconds"
     )
     return features_array, labels_array
-
-
-if __name__ == "__main__":
-    config_path = "train_models.yaml"
-    train_rejection_models_from_config(config_path)

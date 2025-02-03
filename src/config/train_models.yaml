@@ -35,5 +35,9 @@ rejection_models:
     
 baseline_model:
   name: "baseline_cnn"
-  save_path: "/home/ran/afeka/computer-vision/models/baseline_cnn.pth"
-  enabled: false
+  enabled: true
+  policy:
+    learning_rate: 0.001
+    epochs: 50
+    save_path: "/home/ran/afeka/computer-vision/models/baseline_cnn.pth"
+

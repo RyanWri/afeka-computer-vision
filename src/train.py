@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
 from models.baseline_cnn import BaselineCNN
-from io_utils import load_dataset_from_config
 from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
+
+from src.loaders import load_dataset
 
 
 def train_model(model, train_loader, test_loader, device, config):
@@ -26,7 +27,7 @@ def train_model(model, train_loader, test_loader, device, config):
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=config["learning_rate"])
 
-    num_epochs = config["num_epochs"]
+    num_epochs = config["epochs"]
     model.to(device)
 
     scaler = GradScaler()  # Scale gradients to avoid underflow
@@ -42,7 +43,7 @@ def train_model(model, train_loader, test_loader, device, config):
 
             optimizer.zero_grad()
             with autocast():  # Use mixed precision
-                outputs = model(images)
+                outputs = model(images, return_features=False)
                 loss = criterion(outputs, labels)
 
             scaler.scale(loss).backward()  # Scale the loss
@@ -111,30 +112,21 @@ def evaluate_model(model, data_loader, device, criterion):
     return average_loss, accuracy
 
 
-def train_baseline_convolution_model(save_path):
-    # Configuration based on paper
-    config = {
-        "batch_size": 256,
-        "learning_rate": 0.001,  # From the paper
-        "num_epochs": 50,  # From the paper
-        "save_path": save_path,
-        "input": {"folder": "/home/linuxu/datasets/pcam"},
-    }
-
-    train_dataset = load_dataset_from_config(config, split="train")
-    test_dataset = load_dataset_from_config(config, split="test")
+def train_baseline_convolution_model(config):
+    train_dataset = load_dataset(config["input"]["folder"], split="train")
+    test_dataset = load_dataset(config["input"]["folder"], split="test")
 
     # create loader for the train
     train_loader = DataLoader(
         train_dataset,
-        batch_size=config["batch_size"],
+        batch_size=config["input"]["batch_size"],
         shuffle=True,
         num_workers=4,
         pin_memory=True,
     )
     test_loader = DataLoader(
         test_dataset,
-        batch_size=config["batch_size"],
+        batch_size=config["input"]["batch_size"],
         shuffle=True,
         num_workers=4,
         pin_memory=True,
@@ -148,6 +140,8 @@ def train_baseline_convolution_model(save_path):
     print(f"Using device: {device}")
 
     # Train the model
-    trained_model = train_model(model, train_loader, test_loader, device, config)
+    trained_model = train_model(
+        model, train_loader, test_loader, device, config["baseline_model"]["policy"]
+    )
 
     return trained_model
