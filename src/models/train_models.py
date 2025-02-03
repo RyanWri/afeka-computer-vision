@@ -2,48 +2,33 @@ import logging
 import time
 import torch
 import numpy as np
-from src.loaders import create_data_loader, load_dataset
-from src.io_utils import load_config
-from src.models.baseline_cnn import BaselineCNN
+from src.loaders import config_to_dataloader
+from src.io_utils import load_baseline_model
 from src.models.model_factory import ModelFactory
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-logging.info("Starting the training process")
 
 
-def train_rejection_models_from_config(config_path):
-    # Load the configuration
-    config = load_config(config_path)
-    features, labels = get_features(config, split="train")
+def train_rejection_models(config):
+    features, labels = get_features(config)
 
-    for model_config in config["rejection_models"]:
+    for model_config in config["rejection_models"]["models"]:
         model_name = model_config["name"].lower()
-        if not model_config.get("policy", {}).get("enabled", False):
-            logging.info(f"Skipping disabled model: {model_name}")
-            continue
         # Dynamically create the model
         model = ModelFactory.create_model(model_name, weight=model_config["weight"])
         # Train the model using the extracted features
         model.train(features, labels, model_config["policy"])
 
 
-def get_features(config, split):
+def get_features(config, split="train"):
     """Extracts features using the trained BaselineCNN model."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = BaselineCNN().to(device)
-    model.load_state_dict(
-        torch.load(config["baseline_model"]["save_path"], map_location=device)
-    )
+    model = load_baseline_model(config["baseline_model"]["load_path"], device)
     model.eval()
-
-    input_folder, batch_size, sample_size = config["input"].values()
-    train_dataset = load_dataset(input_folder, split="train")
-    sample_size = int(len(train_dataset) * sample_size)
-    train_loader = create_data_loader(
-        train_dataset, sample_size=sample_size, batch_size=batch_size, num_workers=2
-    )
+    model.to(device)
+    train_loader = config_to_dataloader(config, split)
 
     logging.info("Extracting features with BaselineCNN")
     start = time.time()

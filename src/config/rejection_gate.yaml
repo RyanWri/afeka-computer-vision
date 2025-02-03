@@ -1,0 +1,23 @@
+input:
+    folder: "/home/linuxu/datasets/pcam"
+    batch_size: 64
+    sample_size: 0.3
+
+rejection_models:
+  enabled: true
+  models:
+  - name: "mahalanobis"
+    weight: 0.33
+    load_path: "/home/linuxu/afeka/computer-vision/models/mahalanobis.joblib"
+  - name: "knn"
+    weight: 0.33
+    load_path: "/home/linuxu/afeka/computer-vision/models/knn.joblib"
+  - name: "margin"
+    weight: 0.33
+    load_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
+
+baseline_model:
+  enabled: false
+  load_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
+  original_results: "/home/linuxu/afeka/computer-vision/results/baseline_no_rejection.csv"
+

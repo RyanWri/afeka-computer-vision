@@ -1,36 +1,18 @@
 import torch
-import math
 from src.io_utils import load_baseline_model
-from src.loaders import create_data_loader, load_dataset
-
-
-def prepare_validation(config):
-    val_dataset = load_dataset(config["input"]["folder"], split="val")
-
-    # create loader for the train
-    sample_size = math.floor(len(val_dataset) * config["input"]["sample_size"])
-    val_loader = create_data_loader(
-        val_dataset,
-        sample_size=sample_size,
-        batch_size=config["input"]["batch_size"],
-        num_workers=2,
-    )
-
-    return val_loader
+from src.loaders import config_to_dataloader
 
 
 def run_inference(config, threshold):
     """Runs inference on a dataset and returns probabilities and predicted labels."""
-    val_loader = prepare_validation(config)
+    val_loader = config_to_dataloader(config, split="val")
 
     # Detect device (GPU or CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Initialize the model
-    model = load_baseline_model(
-        config["baseline_model"]["inference"]["load_path"], device
-    )
+    model = load_baseline_model(config["baseline_model"]["load_path"], device)
     model.eval()
     model.to(device)
 

@@ -8,9 +8,9 @@ class RejectionGate:
             model = ModelFactory.create_model(
                 model_config["name"], model_config["weight"]
             )
-            model.load(model_config["path"])
+            model.load(model_config["load_path"])
             self.rejection_models.append(model)
 
-    def compute_rejection_confidence(self, input_data):
-        predictions = [model.predict(input_data) for model in self.rejection_models]
-        return sum(predictions)
+    def compute_rejection_confidence(self, features):
+        predictions = [model.predict(features) for model in self.rejection_models]
+        return predictions

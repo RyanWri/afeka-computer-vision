@@ -5,13 +5,15 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
-from sklearn.neighbors import LocalOutlierFactor
+from sklearn.neighbors import KNeighborsClassifier, LocalOutlierFactor
 from sklearn.covariance import EmpiricalCovariance
+import torch
+
+from src.io_utils import load_baseline_model
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-logging.info("Starting the training process")
 
 
 # Base class
@@ -174,6 +176,73 @@ class MahalanobisModel(BaseModel):
         return np.sqrt(np.dot(np.dot(diff.T, inv_cov), diff))
 
 
+class KNNModel(BaseModel):
+    def predict(self, features):
+        """Predict using trained k-NN model."""
+        if self.model is None:
+            raise ValueError("Model not loaded. Call `load` first.")
+
+        features_scaled = self.model["scaler"].transform(features)
+        knn_pred = self.model["model"].predict(features_scaled)
+        return knn_pred
+
+    def train(self, features, labels, config: dict):
+        """Train k-NN on extracted features."""
+        n_neighbors = config.get("n_neighbors", 5)
+        save_path = config["save_path"]
+
+        scaler = StandardScaler()
+        features_scaled = scaler.fit_transform(features)
+
+        logging.info(f"Training k-NN with k={n_neighbors}")
+        start = time.time()
+
+        knn = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1)
+        knn.fit(features_scaled, labels)
+
+        logging.info(f"Completed k-NN training in {time.time() - start:.2f} seconds")
+
+        joblib.dump({"model": knn, "scaler": scaler}, save_path)
+        logging.info(f"k-NN model saved at {save_path}")
+
+
+class MarginModel(BaseModel):
+    def __init__(self, weight):
+        super().__init__(weight)
+        self.fc_layer = None  # Store only the last fully connected layer
+        self.boundary = 0.5  # default boundary
+
+    def load(self, model_path):
+        """Loads only the last fully connected layer from the trained CNN."""
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = load_baseline_model(model_path, device)
+        self.fc_layer = model.fc  # Extract only the final layer
+        self.fc_layer.eval()  # Set to evaluation mode
+        logging.info(f"Loaded fully connected layer from {model_path}")
+
+    def predict(self, features):
+        """Computes the confidence margin |probability - 0.5|, scaled to [0,1]."""
+        if self.fc_layer is None:
+            raise ValueError("Fully connected layer not loaded. Call `load()` first.")
+
+        # Run inference on extracted features using only the last FC layer
+        with torch.no_grad():
+            features_tensor = torch.tensor(features, dtype=torch.float32)
+            logits = self.fc_layer(features_tensor)
+            probabilities = (
+                torch.sigmoid(logits).cpu().numpy().flatten()
+            )  # Using torch.sigmoid()!
+
+        # Compute margin |probability - 0.5| and scale by 2 to ensure [0,1] range
+        margin_scores = np.abs(probabilities - self.boundary) * 2
+        return margin_scores
+
+    def train(self, features, labels, config: dict):
+        """No training required for Margin Model—just logs a message."""
+        self.boundary = config["boundary"]
+        logging.info("Margin Model does not require training.")
+
+
 # Factory class
 class ModelFactory:
     @staticmethod
@@ -186,4 +255,8 @@ class ModelFactory:
             return OneClassSVMModel(weight)
         if model_type == "mahalanobis":
             return MahalanobisModel(weight)
+        if model_type == "knn":
+            return KNNModel(weight)
+        if model_type == "margin":
+            return MarginModel(weight)
         raise ValueError(f"Unknown model type: {model_type}")
