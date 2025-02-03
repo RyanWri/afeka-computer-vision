@@ -8,19 +8,20 @@ if __name__ == "__main__":
     config_path = "full_project.yaml"
     config = load_config(config_path, add_experiment_paths=False)
 
-    # train baseline model if enabled
-    if config["baseline_model"]["enabled"]:
+    # train baseline model
+    if config["baseline_model"]["train"]["enabled"]:
         train_baseline_convolution_model(config)
 
-    # train rejection models if enabled
+    # run inference for baseline
+    if config["baseline_model"]["inference"]["enabled"]:
+        results = run_inference(config, threshold=0.5)
+        dict_to_dataframe(
+            results, config["baseline_model"]["inference"]["original_results"]
+        )
+
+    # train rejection models
     if config["rejection_models"]["enabled"]:
         train_rejection_models_from_config(config_path)
-
-    # run inference for baseline
-    results = run_inference(config, threshold=0.5)
-    dict_to_dataframe(
-        results, config["baseline_model"]["inference"]["original_results"]
-    )
 
     # Run Experiment if enabled
     # experiment_name = "experiment_01"

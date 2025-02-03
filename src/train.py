@@ -139,7 +139,7 @@ def train_baseline_convolution_model(config):
 
     # Train the model
     trained_model = train_model(
-        model, train_loader, test_loader, device, config["baseline_model"]["policy"]
+        model, train_loader, test_loader, device, config["baseline_model"]["train"]
     )
 
     return trained_model
