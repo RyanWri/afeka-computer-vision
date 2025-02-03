@@ -1,7 +1,7 @@
 import os
 import torch
 import yaml
-from src.loaders import load_dataset
+import pandas as pd
 from src.models.baseline_cnn import BaselineCNN
 
 
@@ -15,17 +15,10 @@ def load_config(config_path, add_experiment_paths):
     return config
 
 
-def load_baseline_model(model_config, device):
+def load_baseline_model(model_path: str, device):
     cnn_model = BaselineCNN()
-    cnn_model.load_state_dict(torch.load(model_config["path"], map_location=device))
-    cnn_model.eval()
-    cnn_model.to(device)
+    cnn_model.load_state_dict(torch.load(model_path, map_location=device))
     return cnn_model
-
-
-def load_dataset_from_config(config, split):
-    input_folder = config["input"]["folder"]
-    return load_dataset(input_folder, split)
 
 
 def get_config_path(relative_path):
@@ -50,3 +43,8 @@ def resolve_experiment_paths(config):
     config["experiment"]["metrics_path"] = resolved_paths["metrics_path"]
 
     return config
+
+
+def dict_to_dataframe(d: dict, path: str) -> None:
+    df = pd.DataFrame(d)
+    df.to_csv(path)

@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import math
 from tqdm import tqdm
 from models.baseline_cnn import BaselineCNN
-from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast, GradScaler
-
-from src.loaders import load_dataset
+from src.loaders import create_data_loader, load_dataset
 
 
 def train_model(model, train_loader, test_loader, device, config):
@@ -64,7 +63,6 @@ def train_model(model, train_loader, test_loader, device, config):
     # Save the trained model
     torch.save(model.state_dict(), config["save_path"])
     print(f"Model saved to {config['save_path']}")
-    return model
 
 
 def evaluate_model(model, data_loader, device, criterion):
@@ -90,7 +88,7 @@ def evaluate_model(model, data_loader, device, criterion):
             images, labels = images.to(device), labels.float().to(device).unsqueeze(1)
 
             # Forward pass
-            outputs = model(images)  # Outputs are logits
+            outputs = model(images, return_features=False)  # Outputs are logits
 
             # Compute loss (logits are passed directly)
             loss = criterion(outputs, labels)
@@ -117,19 +115,19 @@ def train_baseline_convolution_model(config):
     test_dataset = load_dataset(config["input"]["folder"], split="test")
 
     # create loader for the train
-    train_loader = DataLoader(
+    sample_size = math.floor(len(train_dataset) * config["input"]["sample_size"])
+    train_loader = create_data_loader(
         train_dataset,
+        sample_size=sample_size,
         batch_size=config["input"]["batch_size"],
-        shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=2,
     )
-    test_loader = DataLoader(
+
+    test_loader = create_data_loader(
         test_dataset,
+        sample_size=sample_size,
         batch_size=config["input"]["batch_size"],
-        shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        num_workers=2,
     )
 
     # Initialize the model
