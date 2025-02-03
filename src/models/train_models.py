@@ -15,7 +15,7 @@ logging.info("Starting the training process")
 
 def train_rejection_models_from_config(config_path):
     # Load the configuration
-    config = load_config(config_path, add_experiment_paths=False)
+    config = load_config(config_path)
     features, labels = get_features(config, split="train")
 
     for model_config in config["rejection_models"]:

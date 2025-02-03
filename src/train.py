@@ -123,6 +123,7 @@ def train_baseline_convolution_model(config):
         num_workers=2,
     )
 
+    sample_size = math.floor(len(test_dataset) * config["input"]["sample_size"])
     test_loader = create_data_loader(
         test_dataset,
         sample_size=sample_size,

@@ -6,7 +6,7 @@ from src.train import train_baseline_convolution_model
 
 if __name__ == "__main__":
     config_path = "full_project.yaml"
-    config = load_config(config_path, add_experiment_paths=False)
+    config = load_config(config_path)
 
     # train baseline model
     if config["baseline_model"]["train"]["enabled"]:

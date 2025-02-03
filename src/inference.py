@@ -6,10 +6,9 @@ from src.loaders import create_data_loader, load_dataset
 
 def prepare_validation(config):
     val_dataset = load_dataset(config["input"]["folder"], split="val")
-    x = len(val_dataset)
 
     # create loader for the train
-    sample_size = math.floor(len(val_dataset) * 1)
+    sample_size = math.floor(len(val_dataset) * config["input"]["sample_size"])
     val_loader = create_data_loader(
         val_dataset,
         sample_size=sample_size,
