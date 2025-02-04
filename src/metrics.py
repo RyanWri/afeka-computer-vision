@@ -29,6 +29,7 @@ def concat_and_process_results(base_folder, original_file, experiment_file, conf
     data["true_label"] = data["true_label"].astype(int)
     data["reject_score"] = data[["knn", "margin", "mahalanobis"]].sum(axis=1)
     data["rejected"] = data["reject_score"] > confidence
+    data["correct"] = data["prediction"] == data["true_label"]
 
     return data
 
