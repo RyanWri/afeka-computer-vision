@@ -1,3 +1,4 @@
+import math
 import os
 import h5py
 import torch
@@ -116,3 +117,12 @@ def create_data_loader(dataset, sample_size, batch_size, num_workers):
         dataset, batch_size=batch_size, sampler=sampler, num_workers=num_workers
     )
     return data_loader
+
+
+def config_to_dataloader(config: dict, split: str):
+    dataset = load_dataset(config["input"]["folder"], split)
+    sample_size = math.floor(len(dataset) * config["input"]["sample_size"])
+    loader = create_data_loader(
+        dataset, sample_size, config["input"]["batch_size"], num_workers=2
+    )
+    return loader

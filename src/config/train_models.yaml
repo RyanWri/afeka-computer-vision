@@ -1,43 +1,30 @@
 input:
-    folder: "/home/ran/datasets/pcam"
+    folder: "/home/linuxu/datasets/pcam"
     batch_size: 64
-    sample_size: 0.01
+    sample_size: 0.3
 
 rejection_models:
-- name: "mahalanobis"
-  weight: 1
-  policy:
-    save_path: "/home/ran/afeka/computer-vision/models/mahalanobis.joblib"
-    enabled: true
-
-- name: "one-class-svm"
-  policy:
-    save_path: "/home/ran/afeka/computer-vision/models/one-class-svm.joblib"
-    enabled: true
-    nu: 0.1
-    kernel: "rbf"
-    gamma: "scale"
-
-- name: "lof"
-  policy:
-    save_path: "/home/ran/afeka/computer-vision/models/lof.joblib"
-    n_neighbors: 12
-    contamination: 0.005
-    enabled: true
-    
-- name: "isolation_forest"
-  policy:
-    save_path: "/home/ran/afeka/computer-vision/models/isolation_forest.joblib"
-    max_samples: 32768
-    n_estimators: 300
-    contamination: 0.005
-    enabled: true
+  enabled: true
+  models:
+  - name: "mahalanobis"
+    weight: 1
+    policy:
+      save_path: "/home/linuxu/afeka/computer-vision/models/mahalanobis.joblib"
+  - name: "knn"
+    weight: 1
+    policy:
+      n_neighbors: 10
+      save_path: "/home/linuxu/afeka/computer-vision/models/knn.joblib"
+  - name: "margin"
+    weight: 1
+    policy:
+      boundary: 0.5
+  
     
 baseline_model:
   name: "baseline_cnn"
-  enabled: true
-  policy:
+  train:
+    enabled: false
     learning_rate: 0.001
-    epochs: 50
-    save_path: "/home/ran/afeka/computer-vision/models/baseline_cnn.pth"
-
+    epochs: 20
+    save_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
