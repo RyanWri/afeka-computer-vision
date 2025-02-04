@@ -48,3 +48,13 @@ def calculate_metrics(df: pd.DataFrame, label_col: str, pred_col: str) -> dict:
         "f1_score": f1_score(y_true, y_pred, average="binary"),
     }
     return metrics
+
+def calc_ratios(dd):
+    correct = dd[dd["correct"]]
+    wrong = dd[~dd["correct"]]
+    correct_ratio = len(correct) / len(dd)
+    wrong_ratio = len(wrong) / len(dd)
+    return {
+        "correct_ratio": correct_ratio,
+        "wrong_ratio": wrong_ratio
+    }
