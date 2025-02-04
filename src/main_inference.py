@@ -6,16 +6,15 @@ from src.loaders import config_to_dataloader
 from src.models.rejection_gate import RejectionGate
 from src.models.train_models import get_features
 from collections import defaultdict
+from datetime import datetime
 
 
-def run_experiment(dataloader, batch_size, model_path):
+def run_experiment(features_arr, labels_arr, batch_size, models_config):
     """
     Run the experiment pipeline based on the loaded configuration.
     """
-    features_arr, labels_arr = get_features(model_path, dataloader)
-
     # Initialize rejection gate
-    rejection_gate = RejectionGate(config["rejection_models"]["models"])
+    rejection_gate = RejectionGate(models_config)
 
     # Prepare results storage
     results = defaultdict(list)
@@ -34,16 +33,15 @@ def run_experiment(dataloader, batch_size, model_path):
 
 
 if __name__ == "__main__":
-    config_path = "rejection_gate.yaml"
+    config_path = "rejection_gate_local.yaml"
     config = load_config(config_path)
     val_loader = config_to_dataloader(config, split="val")
     batch_size = config["input"]["batch_size"]
     baseline_model_path = config["baseline_model"]["load_path"]
 
     # create experiment folder
-    experiment_folder = os.path.join(
-        config["experiment"]["folder"], config["experiment"]["alias"]
-    )
+    id = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    experiment_folder = os.path.join(config["output"]["folder"], id)
     os.makedirs(experiment_folder, exist_ok=True)
 
     # run inference for baseline
@@ -53,9 +51,16 @@ if __name__ == "__main__":
     )
     dict_to_dataframe(results, original_file_path)
 
+    # extract features and labels for all experiments
+    features_arr, labels_arr = get_features(baseline_model_path, val_loader)
+
     # Run Experiment if enabled
-    results = run_experiment(val_loader, batch_size, baseline_model_path)
-    result_file_path = os.path.join(
-        experiment_folder, config["experiment"]["save_path"]
-    )
-    dict_to_dataframe(results, result_file_path)
+    for experiment in config["experiments"]:
+        results = run_experiment(
+            features_arr,
+            labels_arr,
+            batch_size,
+            experiment["rejection_models"]["models"],
+        )
+        result_file_path = os.path.join(experiment_folder, experiment["save_path"])
+        dict_to_dataframe(results, result_file_path)

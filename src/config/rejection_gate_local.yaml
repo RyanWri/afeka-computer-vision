@@ -1,0 +1,79 @@
+input:
+    folder: "/home/ran/datasets/pcam"
+    batch_size: 32
+    sample_size: 0.25
+
+output:
+  folder: /home/ran/afeka/computer-vision/results
+
+rejection_models: &models
+  models:
+  - &knn
+    name: "knn"
+    weight: 0.33
+    load_path: "/home/ran/afeka/computer-vision/models/knn.joblib"
+  - &margin
+    name: "margin"
+    weight: 0.33
+    load_path: "/home/ran/afeka/computer-vision/models/baseline_cnn.pth"
+  - &mahalanobis
+    name: "mahalanobis"
+    weight: 0.33
+    load_path: "/home/ran/afeka/computer-vision/models/mahalanobis.joblib"
+
+baseline_model:
+  load_path: "/home/ran/afeka/computer-vision/models/baseline_cnn.pth"
+  original_results: "baseline_no_rejection.csv"
+
+experiments:
+  - alias: "experiment_01"
+    description: "Equal weights"
+    rejection_models:
+      <<: *models  # Inherit base rejection models
+      models:
+        - <<: *knn
+          weight: 0.33
+        - <<: *margin
+          weight: 0.33
+        - <<: *mahalanobis
+          weight: 0.33
+    save_path: "equal_weights.csv"
+
+  - alias: "experiment_02"
+    description: "Higher k-NN Weight"
+    rejection_models:
+      <<: *models
+      models:
+        - <<: *knn
+          weight: 0.6
+        - <<: *margin
+          weight: 0.2
+        - <<: *mahalanobis
+          weight: 0.2
+    save_path: "higher_knn.csv"
+
+  - alias: "experiment_03"
+    description: "Higher margin Weight"
+    rejection_models:
+      <<: *models
+      models:
+        - <<: *knn
+          weight: 0.2
+        - <<: *margin
+          weight: 0.6
+        - <<: *mahalanobis
+          weight: 0.2
+    save_path: "higher_margin.csv"
+  
+  - alias: "experiment_04"
+    description: "Higher Mahalanobis Weight"
+    rejection_models:
+      <<: *models
+      models:
+        - <<: *knn
+          weight: 0.2
+        - <<: *margin
+          weight: 0.2
+        - <<: *mahalanobis
+          weight: 0.6
+    save_path: "higher_mahalanobis.csv"
