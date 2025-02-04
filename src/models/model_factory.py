@@ -26,7 +26,7 @@ class BaseModel:
         """Load the model from the specified path."""
         self.model = joblib.load(load_path)
 
-    def predict(self, features):
+    def predict(self, features, labels=None):
         """Make predictions using the model."""
         raise NotImplementedError("Subclasses must implement the `predict` method.")
 
@@ -125,9 +125,12 @@ class OneClassSVMModel(BaseModel):
 
 
 class MahalanobisModel(BaseModel):
-    def predict(self, features):
+    def predict(self, features, labels):
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
+
+        if labels is None:
+            raise ValueError("Mahalanobis Model requires labels for inference.")
 
         features_scaled = self.model["scaler"].transform(features)
         distances = []
@@ -138,7 +141,18 @@ class MahalanobisModel(BaseModel):
             dist = self._mahalanobis_distance(features_scaled, mean, cov)
             distances.append(dist)
 
-        return round(min(distances) * self.weight, 5)
+        distances = np.nan_to_num(distances, nan=np.nanmean(distances))
+        distances = np.min(distances, axis=0)
+        min_val = np.min(distances)
+        max_val = np.max(distances)
+
+        if max_val - min_val == 0:
+            return np.zeros_like(distances)
+
+        normalized_scores = (distances - min_val) / (max_val - min_val)
+
+        # Shape: (batch_size,)
+        return normalized_scores
 
     def train(self, features, labels, config: dict):
         save_path = config["save_path"]
@@ -172,12 +186,12 @@ class MahalanobisModel(BaseModel):
 
     def _mahalanobis_distance(self, x, mean, cov):
         diff = x - mean
-        inv_cov = np.linalg.inv(cov.covariance_)
+        inv_cov = np.linalg.pinv(cov.covariance_)
         return np.sqrt(np.dot(np.dot(diff.T, inv_cov), diff))
 
 
 class KNNModel(BaseModel):
-    def predict(self, features):
+    def predict(self, features, labels=None):
         """Predict using trained k-NN model."""
         if self.model is None:
             raise ValueError("Model not loaded. Call `load` first.")
@@ -220,7 +234,7 @@ class MarginModel(BaseModel):
         self.fc_layer.eval()  # Set to evaluation mode
         logging.info(f"Loaded fully connected layer from {model_path}")
 
-    def predict(self, features):
+    def predict(self, features, labels=None):
         """Computes the confidence margin |probability - 0.5|, scaled to [0,1]."""
         if self.fc_layer is None:
             raise ValueError("Fully connected layer not loaded. Call `load()` first.")

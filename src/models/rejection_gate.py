@@ -11,6 +11,9 @@ class RejectionGate:
             model.load(model_config["load_path"])
             self.rejection_models.append(model)
 
-    def compute_rejection_confidence(self, features):
-        predictions = [model.predict(features) for model in self.rejection_models]
+    def compute_rejection_confidence(self, features, labels):
+        predictions = []
+        for model in self.rejection_models:
+            score = model.predict(features, labels)
+            predictions.append(score)
         return predictions
