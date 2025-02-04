@@ -168,8 +168,8 @@ class MarginModel(BaseModel):
                 torch.sigmoid(logits).cpu().numpy().flatten()
             )  # Using torch.sigmoid()!
 
-        # Compute margin |probability - 0.5| and scale by 2 to ensure [0,1] range
-        margin_scores = np.abs(probabilities - self.boundary) * 2
+        # Compute margin |probability - 0.5| and scale to ensure [0,1] range
+        margin_scores = np.abs(probabilities - self.boundary) / self.boundary
         return margin_scores * self.weight
 
     def train(self, features, labels, config: dict):

@@ -17,9 +17,11 @@ rejection_models:
     load_path: "/home/linuxu/afeka/computer-vision/models/mahalanobis.joblib"
 
 baseline_model:
-  enabled: false
   load_path: "/home/linuxu/afeka/computer-vision/models/baseline_cnn.pth"
-  original_results: "/home/linuxu/afeka/computer-vision/results/baseline_no_rejection.csv"
+  original_results: "baseline_no_rejection.csv"
 
 experiment:
-  save_path: "/home/linuxu/afeka/computer-vision/results/experiment_1.csv"
+  folder: /home/linuxu/afeka/computer-vision/results
+  alias: experiment_01
+  description: "test drive, equal weights"
+  save_path: "equal_weights.csv"

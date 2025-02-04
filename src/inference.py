@@ -1,25 +1,22 @@
 import torch
 from src.io_utils import load_baseline_model
-from src.loaders import config_to_dataloader
 
 
-def run_inference(config, threshold):
+def run_inference(dataloader, model_path, threshold):
     """Runs inference on a dataset and returns probabilities and predicted labels."""
-    val_loader = config_to_dataloader(config, split="val")
-
     # Detect device (GPU or CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Initialize the model
-    model = load_baseline_model(config["baseline_model"]["load_path"], device)
+    model = load_baseline_model(model_path, device)
     model.eval()
     model.to(device)
 
     results = {"probability": [], "prediction": [], "true_label": []}
 
     with torch.no_grad():
-        for images, labels in val_loader:
+        for images, labels in dataloader:
             images = images.to(device)
             labels = labels.float().to(device).unsqueeze(1)
 

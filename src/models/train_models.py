@@ -12,7 +12,10 @@ logging.basicConfig(
 
 
 def train_rejection_models(config):
-    features, labels = get_features(config)
+    train_loader = config_to_dataloader(config, split="train")
+    features, labels = get_features(
+        model_load_path=config["baseline_model"]["load_path"], data_loader=train_loader
+    )
 
     for model_config in config["rejection_models"]["models"]:
         model_name = model_config["name"].lower()
@@ -22,13 +25,13 @@ def train_rejection_models(config):
         model.train(features, labels, model_config["policy"])
 
 
-def get_features(config, split="train"):
+def get_features(model_load_path, data_loader):
     """Extracts features using the trained BaselineCNN model."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_baseline_model(config["baseline_model"]["load_path"], device)
+    #
+    model = load_baseline_model(model_load_path, device)
     model.eval()
     model.to(device)
-    train_loader = config_to_dataloader(config, split)
 
     logging.info("Extracting features with BaselineCNN")
     start = time.time()
@@ -36,7 +39,7 @@ def get_features(config, split="train"):
     all_features = []
     all_labels = []
     with torch.no_grad():
-        for images, labels in train_loader:
+        for images, labels in data_loader:
             images = images.to(device)
             features = model(images, return_features=True)  # Extract features
             features = features.view(features.size(0), -1).cpu().numpy()
