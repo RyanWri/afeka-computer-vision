@@ -1,6 +1,6 @@
+import os
 import pandas as pd
 from sklearn.metrics import (
-    roc_auc_score,
     accuracy_score,
     precision_score,
     recall_score,
@@ -8,79 +8,33 @@ from sklearn.metrics import (
 )
 
 
-def compute_rejection_metrics(results_df):
+def concat_and_process_results(base_folder, original_file, experiment_file, confidence):
     """
-    Compute metrics for the rejection mechanism.
+    Loads and processes result data from CSV files in the given base folder.
 
-    Args:
-        results_df (pd.DataFrame): DataFrame containing experiment results.
-
-    Returns:
-        dict: Flattened metrics for the rejection mechanism.
+    :param base_folder: Path to the folder containing result files
+    :param confidence: Threshold for rejection
+    :return: Processed DataFrame
     """
-    # True labels for rejection (1 if rejected, 0 if not)
-    true_rejection_labels = results_df["reject"].astype(int)
-    return {"rejection_rate": true_rejection_labels.mean()}
+    original_result = os.path.join(base_folder, original_file)
+    df = pd.read_csv(original_result, index_col=0)
+
+    equal_weights = os.path.join(base_folder, experiment_file)
+    df_equal = pd.read_csv(equal_weights, index_col=0)
+
+    # Concatenate dataframes
+    data = pd.concat([df, df_equal], axis=1)
+
+    # Handle dtypes
+    data["true_label"] = data["true_label"].astype(int)
+    data["reject_score"] = data[["knn", "margin", "mahalanobis"]].sum(axis=1)
+    data["rejected"] = data["reject_score"] > (1 - confidence)
+    data["correct"] = data["prediction"] == data["true_label"]
+
+    return data
 
 
-def compute_non_rejected_metrics(results_df):
-    """
-    Compute classification metrics for non-rejected samples.
-
-    Args:
-        results_df (pd.DataFrame): DataFrame containing experiment results.
-
-    Returns:
-        dict: Flattened metrics for classification of non-rejected samples.
-    """
-    # Filter non-rejected samples
-    non_rejected = results_df[not results_df["reject"]]
-
-    # Extract labels and predictions
-    true_labels = non_rejected["label"].values
-    probabilities = (
-        non_rejected["probability"].dropna().values
-    )  # Predicted probabilities
-    predictions = non_rejected["predicted_label"].dropna().values  # Binary predictions
-
-    # Classification metrics
-    accuracy = (predictions == true_labels).mean()
-    precision = precision_score(true_labels, predictions)
-    recall = recall_score(true_labels, predictions)
-    f1 = f1_score(true_labels, predictions)
-    auc_classification = roc_auc_score(true_labels, probabilities)
-
-    return {
-        "classification_accuracy": accuracy,
-        "classification_precision": precision,
-        "classification_recall": recall,
-        "classification_f1_score": f1,
-        "classification_auc": auc_classification,
-    }
-
-
-def summarize_metrics(results_df):
-    """
-    Compute and summarize metrics for rejection and classification.
-
-    Args:
-        results_df (pd.DataFrame): DataFrame containing experiment results.
-
-    Returns:
-        dict: Flattened dictionary containing all metrics.
-    """
-    rejection_metrics = compute_rejection_metrics(results_df)
-    classification_metrics = compute_non_rejected_metrics(results_df)
-
-    # Combine and flatten both metric dictionaries
-    return {**rejection_metrics, **classification_metrics}
-
-
-def calculate_metrics(file_path: str, label_col: str, pred_col: str) -> dict:
-    df = df = pd.read_csv(file_path, index_col=0)
-    df[label_col] = df[label_col].astype(int)
-    df[pred_col] = df[pred_col].astype(int)
-
+def calculate_metrics(df: pd.DataFrame, label_col: str, pred_col: str) -> dict:
     y_true = df[label_col].values
     y_pred = df[pred_col].values
 
@@ -94,3 +48,11 @@ def calculate_metrics(file_path: str, label_col: str, pred_col: str) -> dict:
         "f1_score": f1_score(y_true, y_pred, average="binary"),
     }
     return metrics
+
+
+def calc_ratios(dd):
+    correct = dd[dd["correct"]]
+    wrong = dd[~dd["correct"]]
+    correct_ratio = len(correct) / len(dd)
+    wrong_ratio = len(wrong) / len(dd)
+    return {"correct_ratio": correct_ratio, "wrong_ratio": wrong_ratio}

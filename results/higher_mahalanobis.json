@@ -1,0 +1,64 @@
+{
+    "models": {
+        "knn": 0.2,
+        "margin": 0.2,
+        "mahalanobis": 0.6
+    },
+    "original_model": {
+        "accuracy": 0.7821044921875,
+        "confidence": 100,
+        "reject_rate": 0
+    },
+    "experiments": [
+        {
+            "confidence": 20,
+            "accuracy": 0.7825314205915957,
+            "reject_rate": 0.9615478515625
+        },
+        {
+            "confidence": 27,
+            "accuracy": 0.7825578372757993,
+            "reject_rate": 0.939208984375
+        },
+        {
+            "confidence": 34,
+            "accuracy": 0.7835840945728103,
+            "reject_rate": 0.90869140625
+        },
+        {
+            "confidence": 41,
+            "accuracy": 0.7860703812316715,
+            "reject_rate": 0.83251953125
+        },
+        {
+            "confidence": 48,
+            "accuracy": 0.7892477132723539,
+            "reject_rate": 0.6539306640625
+        },
+        {
+            "confidence": 55,
+            "accuracy": 0.7917277794074509,
+            "reject_rate": 0.4161376953125
+        },
+        {
+            "confidence": 62,
+            "accuracy": 0.7927337701012508,
+            "reject_rate": 0.2049560546875
+        },
+        {
+            "confidence": 69,
+            "accuracy": 0.7946768060836502,
+            "reject_rate": 0.064208984375
+        },
+        {
+            "confidence": 76,
+            "accuracy": 0.8403361344537815,
+            "reject_rate": 0.0145263671875
+        },
+        {
+            "confidence": 83,
+            "accuracy": 0.9285714285714286,
+            "reject_rate": 0.001708984375
+        }
+    ]
+}
