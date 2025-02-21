@@ -28,7 +28,7 @@ def concat_and_process_results(base_folder, original_file, experiment_file, conf
     # Handle dtypes
     data["true_label"] = data["true_label"].astype(int)
     data["reject_score"] = data[["knn", "margin", "mahalanobis"]].sum(axis=1)
-    data["rejected"] = data["reject_score"] > confidence
+    data["rejected"] = data["reject_score"] > (1 - confidence)
     data["correct"] = data["prediction"] == data["true_label"]
 
     return data
@@ -49,12 +49,10 @@ def calculate_metrics(df: pd.DataFrame, label_col: str, pred_col: str) -> dict:
     }
     return metrics
 
+
 def calc_ratios(dd):
     correct = dd[dd["correct"]]
     wrong = dd[~dd["correct"]]
     correct_ratio = len(correct) / len(dd)
     wrong_ratio = len(wrong) / len(dd)
-    return {
-        "correct_ratio": correct_ratio,
-        "wrong_ratio": wrong_ratio
-    }
+    return {"correct_ratio": correct_ratio, "wrong_ratio": wrong_ratio}
