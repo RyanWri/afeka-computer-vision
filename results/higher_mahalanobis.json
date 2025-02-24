@@ -12,53 +12,53 @@
     "experiments": [
         {
             "confidence": 20,
-            "accuracy": 0.7825314205915957,
-            "reject_rate": 0.9615478515625
+            "accuracy": 0.8947368421052632,
+            "reject_rate": 0.9752197265625
         },
         {
             "confidence": 27,
-            "accuracy": 0.7825578372757993,
-            "reject_rate": 0.939208984375
+            "accuracy": 0.8258928571428571,
+            "reject_rate": 0.9461669921875
         },
         {
             "confidence": 34,
-            "accuracy": 0.7835840945728103,
-            "reject_rate": 0.90869140625
+            "accuracy": 0.7925764192139738,
+            "reject_rate": 0.925537109375
         },
         {
             "confidence": 41,
-            "accuracy": 0.7860703812316715,
-            "reject_rate": 0.83251953125
+            "accuracy": 0.7931179185900126,
+            "reject_rate": 0.8753662109375
         },
         {
             "confidence": 48,
-            "accuracy": 0.7892477132723539,
-            "reject_rate": 0.6539306640625
+            "accuracy": 0.7905611645926274,
+            "reject_rate": 0.7403564453125
         },
         {
             "confidence": 55,
-            "accuracy": 0.7917277794074509,
-            "reject_rate": 0.4161376953125
+            "accuracy": 0.7889530090684254,
+            "reject_rate": 0.5198974609375
         },
         {
             "confidence": 62,
-            "accuracy": 0.7927337701012508,
-            "reject_rate": 0.2049560546875
+            "accuracy": 0.7849672291172779,
+            "reject_rate": 0.2908935546875
         },
         {
             "confidence": 69,
-            "accuracy": 0.7946768060836502,
-            "reject_rate": 0.064208984375
+            "accuracy": 0.783038776048536,
+            "reject_rate": 0.11181640625
         },
         {
             "confidence": 76,
-            "accuracy": 0.8403361344537815,
-            "reject_rate": 0.0145263671875
+            "accuracy": 0.7827377112630628,
+            "reject_rate": 0.02734375
         },
         {
             "confidence": 83,
-            "accuracy": 0.9285714285714286,
-            "reject_rate": 0.001708984375
+            "accuracy": 0.7819501814995619,
+            "reject_rate": 0.004638671875
         }
     ]
 }
